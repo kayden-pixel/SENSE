@@ -325,7 +325,15 @@ class WhisperService(
                 disconnect()
                 if (e !is CancellationException)
                     state.value =
-                        VoiceState(VoicePhase.FAILED, error = e.message ?: "Unable to connect")
+                        VoiceState(
+                            VoicePhase.FAILED,
+                            error =
+                                UserFailures.message(
+                                    e,
+                                    capabilities.state.value.online,
+                                    voice = true,
+                                ),
+                        )
             }
             throw e
         } finally {

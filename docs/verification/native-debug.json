@@ -1,12 +1,12 @@
 {
   "apk": "app/build/outputs/apk/debug/app-debug.apk",
-  "apkSha256": "06fb9436b3226cc84953e1fa27319c88973e508115103ac271981e4a8bcc6a95",
+  "apkSha256": "8dc1d0181cf3cb5bad2b7dab83215163d473cdd59c0b5f311a343548b88ba268",
   "libraries": [
     {
       "path": "lib/arm64-v8a/libandroidx.graphics.path.so",
       "abi": "arm64-v8a",
       "sha256": "41e9a793c43a0f4fddb19e33f346bace464f30f888ba7b9eaf96294ea115bfb6",
-      "zipPayloadOffset": 72187904,
+      "zipPayloadOffset": 72269824,
       "loadSegments": [
         {
           "offset": 0,
@@ -39,7 +39,7 @@
       "path": "lib/arm64-v8a/libdatastore_shared_counter.so",
       "abi": "arm64-v8a",
       "sha256": "d3e48717c9aa147e0ab21063ba0e8e0211cabf8bf40b222640829519edbf58e1",
-      "zipPayloadOffset": 72204288,
+      "zipPayloadOffset": 72286208,
       "loadSegments": [
         {
           "offset": 0,
@@ -72,7 +72,7 @@
       "path": "lib/arm64-v8a/libface_detector_v2_jni.so",
       "abi": "arm64-v8a",
       "sha256": "d2d105239f5c723838a6bea81ee9cf828b8a56b4de4bc1f4a2556b320d758851",
-      "zipPayloadOffset": 72220672,
+      "zipPayloadOffset": 72302592,
       "loadSegments": [
         {
           "offset": 0,
@@ -105,7 +105,7 @@
       "path": "lib/arm64-v8a/libimage_processing_util_jni.so",
       "abi": "arm64-v8a",
       "sha256": "3e0071afcdc7e321f839e196d266014182f18d0988e4455acc9857a085b2184e",
-      "zipPayloadOffset": 80756736,
+      "zipPayloadOffset": 80838656,
       "loadSegments": [
         {
           "offset": 0,
@@ -138,7 +138,7 @@
       "path": "lib/arm64-v8a/libjnidispatch.so",
       "abi": "arm64-v8a",
       "sha256": "abc26e994517bcaa3309acdb0a27373864086c7569c89d3087b8626fada9ef06",
-      "zipPayloadOffset": 80789504,
+      "zipPayloadOffset": 80871424,
       "loadSegments": [
         {
           "offset": 0,
@@ -163,7 +163,7 @@
       "path": "lib/arm64-v8a/liblivekit_uniffi.so",
       "abi": "arm64-v8a",
       "sha256": "5a361b8d7ecf4ef4ca4a4788d671c72e2de1b54c3605e888951225b00cb02c93",
-      "zipPayloadOffset": 80969728,
+      "zipPayloadOffset": 81051648,
       "loadSegments": [
         {
           "offset": 0,
@@ -204,7 +204,7 @@
       "path": "lib/arm64-v8a/liblkjingle_peerconnection_so.so",
       "abi": "arm64-v8a",
       "sha256": "827922506ab840b639836ffc28ae80a33dd7c3c4a0ee33cf374989c31828e6fb",
-      "zipPayloadOffset": 82558976,
+      "zipPayloadOffset": 82640896,
       "loadSegments": [
         {
           "offset": 0,
@@ -237,7 +237,7 @@
       "path": "lib/arm64-v8a/libsurface_util_jni.so",
       "abi": "arm64-v8a",
       "sha256": "ee3f0d56f81cc0a301db32dc4fd51274c3216733b4c40172768e38bc5049a265",
-      "zipPayloadOffset": 94666752,
+      "zipPayloadOffset": 94748672,
       "loadSegments": [
         {
           "offset": 0,
@@ -262,7 +262,7 @@
       "path": "lib/x86_64/libandroidx.graphics.path.so",
       "abi": "x86_64",
       "sha256": "4e56c996f13670e70082658de7880c4020eabf4f25e43387f88ed78a713fc9f0",
-      "zipPayloadOffset": 94683136,
+      "zipPayloadOffset": 94765056,
       "loadSegments": [
         {
           "offset": 0,
@@ -295,7 +295,7 @@
       "path": "lib/x86_64/libdatastore_shared_counter.so",
       "abi": "x86_64",
       "sha256": "fb6c9208988c49ae94943bc3236fa763ba584722e044fa4ea9a12d2941027105",
-      "zipPayloadOffset": 94699520,
+      "zipPayloadOffset": 94781440,
       "loadSegments": [
         {
           "offset": 0,
@@ -320,7 +320,7 @@
       "path": "lib/x86_64/libface_detector_v2_jni.so",
       "abi": "x86_64",
       "sha256": "bd2a0761c113a5285aff5591cc9a516fce8b351175151ba2e0390b2bfe64d8fe",
-      "zipPayloadOffset": 94715904,
+      "zipPayloadOffset": 94797824,
       "loadSegments": [
         {
           "offset": 0,
@@ -353,7 +353,7 @@
       "path": "lib/x86_64/libimage_processing_util_jni.so",
       "abi": "x86_64",
       "sha256": "676e3e280c10dcb9b71ef5bb727552610dc73c7ec85af54c7c898f82785c33d7",
-      "zipPayloadOffset": 104415232,
+      "zipPayloadOffset": 104497152,
       "loadSegments": [
         {
           "offset": 0,
@@ -386,7 +386,7 @@
       "path": "lib/x86_64/libjnidispatch.so",
       "abi": "x86_64",
       "sha256": "3809247e9b804a05ed8377b87d545cf5b5e97f960f75e725bc8497b40260e417",
-      "zipPayloadOffset": 104464384,
+      "zipPayloadOffset": 104546304,
       "loadSegments": [
         {
           "offset": 0,
@@ -411,7 +411,7 @@
       "path": "lib/x86_64/liblivekit_uniffi.so",
       "abi": "x86_64",
       "sha256": "5c0556a5c5a73e2195ec180780dc16158729601c44710ef87d4ef92490b40303",
-      "zipPayloadOffset": 104595456,
+      "zipPayloadOffset": 104677376,
       "loadSegments": [
         {
           "offset": 0,
@@ -452,7 +452,7 @@
       "path": "lib/x86_64/liblkjingle_peerconnection_so.so",
       "abi": "x86_64",
       "sha256": "0bb88a673bebc63d16453e52839b86d5c25d28b917c93b96d142fb357e688d45",
-      "zipPayloadOffset": 106561536,
+      "zipPayloadOffset": 106643456,
       "loadSegments": [
         {
           "offset": 0,
@@ -485,7 +485,7 @@
       "path": "lib/x86_64/libsurface_util_jni.so",
       "abi": "x86_64",
       "sha256": "cd425e10a365fb3695e53f1e46227d44d89f14854da4f1258ef079c80c752339",
-      "zipPayloadOffset": 122634240,
+      "zipPayloadOffset": 122716160,
       "loadSegments": [
         {
           "offset": 0,

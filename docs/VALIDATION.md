@@ -27,7 +27,7 @@ python tools/check_native.py app/build/outputs/apk/release/app-release-unsigned.
 
 Release signing and public server deployment are operator steps. An unsigned release APK is a build check, not an installable signed release. The debug APK is signed with the local Android debug key for testing.
 
-## Verified in this pass — 2026-10-15
+## Earlier 0.1.0 verification — 2026-10-15
 
 - assembleDebug and assembleRelease: passed; release is unsigned and R8-minified.
 - testDebugUnitTest: 21 tests, zero failures/errors/skips, including temporal tracking, malformed DTW input, clock freshness, limiter safety, privacy reset, atomic artifact failure and stalled HTTP body cancellation.
@@ -38,3 +38,11 @@ Release signing and public server deployment are operator steps. An unsigned rel
 - Hardware interaction, end-to-end voice/media, real ranging and on-device camera/recognition accuracy were not tested: no connected Android device/emulator or deployed backend/LiveKit server was available.
 - Source is published at https://github.com/kayden-pixel/SENSE. The CI workflow can publish a debug-signed prerelease after Android/backend checks pass. CI SDK setup explicitly installs platform-tools because the old tools package has been removed.
 - The prepared kayden-pixel owner identity is verified against a durable local SQLite database. Its private access/configuration files are outside the repository and absent from both APKs and the source archive. No public SENSE backend is deployed. Saved LiveKit CLI project credentials returned HTTP 401 and were not used.
+
+## Runtime hardening 0.1.1 — 2026-10-15
+
+- Developer APK build, release Kotlin compilation and lint pass. Android JVM suite: 27 tests, zero failures. Backend HTTP/unit suite: 31 reported tests, zero failures. Native validator regression suite: 5 tests pass. The current developer APK passes actual ELF and ZIP-layout checks for all 16 packaged libraries.
+- First run authenticates and persists the session before opening the main UI. Release ignores developer endpoint preferences and offline preview. URL editing is debug Labs only. HTTP/SDK failures map to controlled user messages; recovery keys use a protected dialog. Failed signup-response retries can recover using the device-held credential, without taking another identity.
+- Real runtime probe using the saved LiveKit configuration: local API /health returned 200; /ready returned 503 with api=true and voice=false. An actual LiveKit room join returned HTTP 401, invalid API key. No successful production media or Android-to-production path is claimed.
+- No official public production endpoint or authorized persistent host is available. Four encrypted release-signing secrets are provisioned in GitHub; deployment and valid LiveKit credentials remain unavailable. No Android device/emulator is connected.
+- Private RSA-3072 PKCS12 release signing is provisioned locally and as encrypted GitHub secrets. Release packaging correctly fails its live-readiness gate. A new production APK was not built or published. The retained native-release.json and unsigned 0.1.0 APK describe the earlier build, not a current production release.

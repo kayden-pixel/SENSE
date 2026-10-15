@@ -13,6 +13,7 @@ test("block ownership, scoped media revocation, retry and input limits", async (
     databasePath: ":memory:",
     mediaPath: media,
     radarSecret: "a".repeat(32),
+    verifyLivekit: async () => true,
     livekit: {
       url: "wss://voice.example.org",
       key: "test-only",

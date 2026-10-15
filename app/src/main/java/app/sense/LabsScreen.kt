@@ -32,12 +32,39 @@ internal fun LabsScreen(vm: SenseViewModel, c: Capabilities) {
     val download by vm.g.packs.download.collectAsStateWithLifecycle()
     var simulation by remember { mutableStateOf(false) }
     var url by remember { mutableStateOf("") }
+    var serverUrl by remember { mutableStateOf(vm.g.backend.origin) }
+    val signedIn by vm.g.backend.signedIn.collectAsStateWithLifecycle()
+    val accountError by vm.error.collectAsStateWithLifecycle()
     Page {
         Title(
             "Labs",
             "At the edge.",
             "Experimental capabilities and device details. Nothing here switches on automatically.",
         )
+        if (BuildConfig.DEBUG)
+            Section("Developer server", "Developer builds only") {
+                OutlinedTextField(
+                    serverUrl,
+                    { serverUrl = it },
+                    label = { Text("HTTPS backend URL") },
+                    singleLine = true,
+                    enabled = !signedIn,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                if (signedIn) Text("Sign out before changing the developer server.", color = Muted)
+                else {
+                    Action(
+                        "Use developer server",
+                        serverUrl.startsWith("https://") || serverUrl.isBlank(),
+                    ) {
+                        vm.changeDeveloperServer(serverUrl)
+                    }
+                    TextButton(onClick = { vm.openOfflineDeveloperPreview() }) {
+                        Text("Open offline developer preview")
+                    }
+                }
+                accountError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            }
         Section("Hardware") {
             Detail("UWB", if (c.uwb) "Supported" else "Unavailable")
             Detail("Android Ranging", if (c.ranging) "Available" else "Unavailable")

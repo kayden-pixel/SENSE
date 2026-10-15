@@ -26,7 +26,6 @@ import app.sense.core.*
 import app.sense.data.*
 import kotlin.math.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.first
 import org.json.*
 
 @Composable
@@ -37,15 +36,7 @@ internal fun YouScreen(
     permission: (String) -> Unit,
 ) {
     var name by remember(profile.name) { mutableStateOf(profile.name) }
-    var url by remember { mutableStateOf(app.sense.BuildConfig.BACKEND_URL) }
-    var username by remember { mutableStateOf("") }
-    var key by remember { mutableStateOf("") }
-    var register by remember { mutableStateOf(true) }
-    var legacy by remember { mutableStateOf(false) }
     val savedUsername by remember { vm.g.store.text("username") }.collectAsStateWithLifecycle("")
-    val recoveryKey by vm.recoveryKey.collectAsStateWithLifecycle()
-    DisposableEffect(vm) { onDispose { vm.recoveryKey.value = null } }
-    val busy by vm.busy.collectAsStateWithLifecycle()
     val status by vm.g.backend.status.collectAsStateWithLifecycle()
     val clipboard = LocalClipboardManager.current
     val ctx = LocalContext.current
@@ -98,72 +89,10 @@ internal fun YouScreen(
         Section("Your identity", status) {
             if (vm.g.backend.authenticated) {
                 Text("Signed in. Friends and sessions sync while SENSE is open.", color = Muted)
-                TextButton(onClick = { vm.action { vm.g.backend.signOut() } }) { Text("Sign out") }
+                TextButton(onClick = { vm.signOut() }) { Text("Sign out") }
                 TextButton(onClick = { vm.showRecoveryKey() }) { Text("Show private recovery key") }
             } else {
-                LaunchedEffect(Unit) {
-                    val saved = vm.g.store.text("backend").first()
-                    if (saved.isNotBlank()) url = saved
-                }
-                OutlinedTextField(
-                    url,
-                    { url = it },
-                    label = { Text("SENSE server · https://") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Toggle("Choose a new username", register) {
-                    register = it
-                    key = ""
-                    legacy = false
-                }
-                if (!register)
-                    Toggle("Use an older SENSE ID", legacy) {
-                        legacy = it
-                        username = ""
-                        key = ""
-                    }
-                OutlinedTextField(
-                    username,
-                    { username = it.take(if (legacy) 64 else 24) },
-                    label = {
-                        Text(
-                            if (legacy) "Existing SENSE ID"
-                            else "Username · 3–24 letters, numbers or hyphens"
-                        )
-                    },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                if (!register)
-                    OutlinedTextField(
-                        key,
-                        { key = it.take(128) },
-                        label = {
-                            Text(
-                                if (legacy) "Original password"
-                                else "Recovery key · leave empty on a saved phone"
-                            )
-                        },
-                        visualTransformation = PasswordVisualTransformation(),
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                Action(
-                    if (busy) "Connecting…" else if (register) "Use this username" else "Sign in",
-                    !busy &&
-                        Regex(if (legacy) "[a-zA-Z0-9-]{1,64}" else "[a-zA-Z0-9][a-zA-Z0-9-]{2,23}")
-                            .matches(username.trim()) &&
-                        url.startsWith("https://"),
-                ) {
-                    vm.connect(url, username, key, register, legacy)
-                    key = ""
-                }
-                Text(
-                    "Your phone stores a private key to protect your username. New identities are created only when you choose. Keep the recovery key to sign in on another phone.",
-                    color = Muted,
-                    style = MaterialTheme.typography.bodySmall,
-                )
+                AccountForm(vm, profile)
             }
         }
         Section("Sensor permissions") {
@@ -192,31 +121,9 @@ internal fun YouScreen(
             TextButton(onClick = { vm.open(Feature.VEIL) }) { Text("Manage Veil") }
         }
         Text(
-            "SENSE 0.1.0 beta · Apache-2.0",
+            "SENSE " + BuildConfig.VERSION_NAME + " · Apache-2.0",
             color = Muted,
             style = MaterialTheme.typography.bodySmall,
-        )
-    }
-    recoveryKey?.let { secret ->
-        AlertDialog(
-            onDismissRequest = { vm.recoveryKey.value = null },
-            properties =
-                androidx.compose.ui.window.DialogProperties(
-                    securePolicy = androidx.compose.ui.window.SecureFlagPolicy.SecureOn
-                ),
-            title = { Text("Keep this private") },
-            text = {
-                Column {
-                    Text(
-                        "This recovery key gives access to your identity. Save it somewhere private. It is never included in the shared APK."
-                    )
-                    Spacer(Modifier.height(12.dp))
-                    androidx.compose.foundation.text.selection.SelectionContainer { Text(secret) }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { vm.recoveryKey.value = null }) { Text("Done") }
-            },
         )
     }
 }

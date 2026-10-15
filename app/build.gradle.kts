@@ -1,4 +1,5 @@
 import java.net.URI
+import java.util.Properties
 
 plugins {
     id("com.android.application")
@@ -7,10 +8,17 @@ plugins {
     id("com.google.devtools.ksp")
 }
 
+val productionBackendUrl =
+    Properties()
+        .apply { rootProject.file("config/production.properties").inputStream().use { load(it) } }
+        .getProperty("backendUrl", "")
+        .trimEnd('/')
+val releaseKeystorePath = providers.environmentVariable("SENSE_KEYSTORE_PATH").orNull
+
 val backendUrl =
     (providers.gradleProperty("sense.backendUrl").orNull
             ?: System.getenv("SENSE_BACKEND_URL")
-            ?: "")
+            ?: productionBackendUrl)
         .trimEnd('/')
 
 require(
@@ -35,8 +43,8 @@ android {
         applicationId = "app.sense"
         minSdk = 28
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1.0-beta"
+        versionCode = 2
+        versionName = "0.1.1-beta"
         buildConfigField("String", "BACKEND_URL", "\"" + backendUrl + "\"")
     }
     buildFeatures {
@@ -52,8 +60,21 @@ android {
         jniLibs.useLegacyPackaging = false
         resources.excludes += setOf("META-INF/AL2.0", "META-INF/LGPL2.1")
     }
+    signingConfigs {
+        if (releaseKeystorePath != null)
+            create("production") {
+                storeType = "PKCS12"
+                storeFile = file(releaseKeystorePath)
+                storePassword = providers.environmentVariable("SENSE_KEYSTORE_PASSWORD").orNull
+                keyAlias = providers.environmentVariable("SENSE_KEY_ALIAS").orNull
+                keyPassword = providers.environmentVariable("SENSE_KEY_PASSWORD").orNull
+            }
+    }
     buildTypes {
+        debug { buildConfigField("String", "BACKEND_URL", "\"" + backendUrl + "\"") }
         release {
+            buildConfigField("String", "BACKEND_URL", "\"" + productionBackendUrl + "\"")
+            if (releaseKeystorePath != null) signingConfig = signingConfigs.getByName("production")
             isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -62,6 +83,18 @@ android {
         }
     }
 }
+
+val verifyProductionBackend by
+    tasks.registering(Exec::class) {
+        group = "verification"
+        description = "Refuse production packaging until the official service and signing are ready"
+        workingDir(rootProject.projectDir)
+        commandLine("node", "tools/check_release.mjs", "config/production.properties")
+    }
+
+tasks
+    .matching { it.name in setOf("packageRelease", "assembleRelease", "bundleRelease") }
+    .configureEach { dependsOn(verifyProductionBackend) }
 
 ksp { arg("room.schemaLocation", "$projectDir/schemas") }
 

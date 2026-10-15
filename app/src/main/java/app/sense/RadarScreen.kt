@@ -79,7 +79,7 @@ internal fun RadarScreen(vm: SenseViewModel, c: Capabilities, permission: (Strin
             Setup(
                 "Connect with your circle",
                 "Sign in to recognize your friends' nearby phones.",
-                "Set up account",
+                "Sign in",
             ) {
                 vm.navigate(Destination.YOU)
             }

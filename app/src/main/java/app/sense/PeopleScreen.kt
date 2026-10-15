@@ -39,9 +39,9 @@ internal fun PeopleScreen(vm: SenseViewModel) {
         )
         if (!vm.g.backend.authenticated)
             Setup(
-                "Connect your account",
-                "Friends and room invitations need your SENSE server.",
-                "Set up account",
+                "Sign in to connect",
+                "Sign in to add friends and receive invitations.",
+                "Sign in",
             ) {
                 vm.navigate(Destination.YOU)
             }

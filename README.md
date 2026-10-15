@@ -4,13 +4,15 @@
 
 A native, local-first Android sensing app. Kotlin, Compose and Material 3. Apache-2.0 for original source.
 
+**The install-and-use production release is blocked: no official production service is deployed and the saved LiveKit project rejects its API key. Existing APK downloads are developer builds.**
+
 SENSE is an early beta implementation, not a hardware-validated release. No AI provider account, subscription, or user API key is required. Friends, voice and coordinated capture use your own HTTPS backend; voice media uses your own LiveKit deployment.
 
 ## Status
 
 | Status | Feature | What is actually implemented |
 |---|---|---|
-| WORKING | App foundation | Five-tab dark UI, onboarding, contextual setup, capability StateFlow, permissions, Room and DataStore, encrypted credentials and mouth training |
+| PARTIAL | App foundation | Five-tab dark UI, authenticated first-run flow, restored secure sessions, contextual permissions, Room/DataStore and encrypted credentials/training. Production endpoint and live deployment validation remain blocked |
 | WORKING | People backend | Unique usernames with device-held recovery keys, compatible legacy accounts, requests, accept/remove/block, heartbeat presence, invitations and expiring sessions |
 | PARTIAL | Radar fallback | BLE primary-packet advertising/scanning with rotating friend identifiers; RSSI estimates, smoothing and stale state; no invented direction. Physical two-phone discovery/calibration remains unverified |
 | PARTIAL | Precise Radar | Android 16 Ranging with HTTPS OOB exchange, platform negotiation may select UWB; needs testing on supported phones; pre-16 standalone UWB is not integrated |
@@ -32,17 +34,18 @@ This beta ships arm64-v8a and x86_64 only. Older 32-bit devices are not supporte
 Install JDK 17 or 21, Android SDK Platform 36 (platforms;android-36) and Build Tools 35.0.0. Compile/target SDK is Android 16/API 36; minimum is API 28. Build Tools 35.0.0 is explicitly pinned for AGP 8.13 and is separate from the platform API level. The wrapper pins Gradle 8.13; Android Gradle Plugin 8.13.0 and Kotlin 2.1.20 are pinned.
 
 ~~~sh
-./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug :app:assembleRelease
+./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug :app:compileReleaseKotlin
 python -m unittest discover -s tools -p "test_*.py"
 python tools/check_native.py app/build/outputs/apk/debug/app-debug.apk
-python tools/check_native.py app/build/outputs/apk/release/app-release-unsigned.apk
 cd server
 node --test test/*.test.mjs
 ~~~
 
 On Windows use gradlew.bat. Set JAVA_HOME to your JDK. If a Windows JBR build reports a Unix-domain loopback connection error with a long temporary path, set JAVA_TOOL_OPTIONS=-Djdk.net.unixdomain.tmpdir=C:\Windows\Temp for that build. No machine-specific path is committed.
 
-An endpoint can be supplied at build time with -Psense.backendUrl=https://sense.example.org or SENSE_BACKEND_URL. Users can also configure an HTTPS endpoint in You. Only a public URL goes into the APK; backend and LiveKit secrets stay on the server. HTTP is deliberately disabled in the app, including debug.
+The release build reads only the public official endpoint from config/production.properties. Normal users never enter server URLs or LiveKit settings. Debug builds can override the endpoint with -Psense.backendUrl or SENSE_BACKEND_URL and in Labs → Developer server. Production ignores stored debug overrides and has no offline-preview bypass.
+
+Production packaging runs tools/check_release.mjs: it requires a public HTTPS endpoint whose /ready check proves API and LiveKit authorization, plus private release signing supplied through environment configuration. With the current missing production configuration, assembleRelease and bundleRelease intentionally fail. CI compiles release sources and tests developer builds, and cannot publish an unconfigured debug APK as a production release.
 
 ## Run the backend
 
@@ -58,7 +61,7 @@ node --env-file=.env src/server.mjs
 
 Place it behind an HTTPS reverse proxy. Bind to localhost unless a private container network is used. Store database/media on a durable disk and back it up; protect the disk and backups. Do not expose the plain HTTP listener publicly. See [server setup](docs/SERVER.md).
 
-In You, choose a username against the shared HTTPS server. The phone generates a private 256-bit recovery key and stores it with Android Keystore; save this key to use your identity on another phone. A username alone never authorizes access. Friends choose their own usernames explicitly; the APK contains no owner login. To use a prepared identity, turn off Choose a new username and enter its username and private recovery key. Older SENSE ID/password accounts remain supported. Exchange usernames and send/accept requests in People. Both phones must open Radar to advertise and range. Radar requests Nearby devices and precise location permission because it derives relative distance from scans; Android location services must be enabled. SENSE does not request GPS coordinates. Rotating BLE hints are not authenticated proof of proximity. In Whisper, create a room, invite the friend, then both join. In Moment, create/invite/join, mark both cameras ready, and the host starts the shared countdown. Transfer remains an explicit user action.
+On first launch, choose a username or sign in with a recovery key. Authentication and secure session persistence complete before the main UI opens. The phone generates a private 256-bit recovery key and stores it with Android Keystore; save this key to use your identity on another phone. A username alone never authorizes access. Friends choose their own usernames explicitly; the APK contains no owner login. To use a prepared identity, turn off Choose a new username and enter its username and private recovery key. Older SENSE ID/password accounts remain supported. Exchange usernames and send/accept requests in People. Both phones must open Radar to advertise and range. Radar requests Nearby devices and precise location permission because it derives relative distance from scans; Android location services must be enabled. SENSE does not request GPS coordinates. Rotating BLE hints are not authenticated proof of proximity. In Whisper, create a room, invite the friend, then both join. In Moment, create/invite/join, mark both cameras ready, and the host starts the shared countdown. Transfer remains an explicit user action.
 
 ## Architecture
 

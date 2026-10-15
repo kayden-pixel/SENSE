@@ -85,9 +85,9 @@ internal fun WhisperScreen(vm: SenseViewModel, c: Capabilities, permission: (Str
             }
         if (!vm.g.backend.authenticated)
             Setup(
-                "Your server connects the room",
-                "Configure your SENSE backend and its LiveKit server.",
-                "Set up account",
+                "Bring your people closer",
+                "Sign in to create a room or join an invitation.",
+                "Sign in",
             ) {
                 vm.navigate(Destination.YOU)
             }

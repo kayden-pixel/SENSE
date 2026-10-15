@@ -100,6 +100,13 @@ class SecureVault(context: Context) {
     @Synchronized
     fun tokenFor(origin: String): String? = if (tokenOrigin == origin) token() else null
 
+    @Synchronized
+    fun clearTokenIfMatches(origin: String, expected: String?): Boolean {
+        if (expected == null || tokenFor(origin) != expected) return false
+        token(null)
+        return true
+    }
+
     private var tokenLoaded = false
     private var cachedToken: String? = null
 
@@ -117,18 +124,25 @@ class SecureVault(context: Context) {
     fun token(value: String?, origin: String? = null) {
         require(value == null || !origin.isNullOrBlank())
         val sealed = value?.let { seal(it) }
-        prefs
-            .edit()
-            .apply {
-                if (value == null) {
-                    remove("token")
-                    remove("origin")
-                } else {
-                    putString("token", sealed)
-                    putString("origin", origin)
+        val saved =
+            prefs
+                .edit()
+                .apply {
+                    if (value == null) {
+                        remove("token")
+                        remove("origin")
+                    } else {
+                        putString("token", sealed)
+                        putString("origin", origin)
+                    }
                 }
-            }
-            .apply()
+                .commit()
+        if (value == null) {
+            tokenOrigin = null
+            cachedToken = null
+            tokenLoaded = true
+        }
+        check(saved) { "Could not securely save your session" }
         tokenOrigin = if (value == null) null else origin
         cachedToken = value
         tokenLoaded = true

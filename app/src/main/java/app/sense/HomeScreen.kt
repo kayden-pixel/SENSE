@@ -26,34 +26,24 @@ import org.json.*
 
 @Composable
 internal fun Onboarding(vm: SenseViewModel, profile: Profile) {
-    var name by remember { mutableStateOf("") }
     Column(
-        Modifier.fillMaxSize().background(Ink).padding(28.dp),
+        Modifier.fillMaxSize().background(Ink).verticalScroll(rememberScrollState()).padding(28.dp),
         verticalArrangement = Arrangement.Center,
     ) {
-        RadarGraphic(emptyList(), Modifier.fillMaxWidth().height(200.dp))
         Spacer(Modifier.height(32.dp))
-        Title(
-            "SENSE",
-            "A little more aware.",
-            "Find your people. Speak quietly. Keep private moments private.",
-        )
+        RadarGraphic(emptyList(), Modifier.fillMaxWidth().height(100.dp))
         Spacer(Modifier.height(24.dp))
-        Text(
-            "Camera and mouth sensing stay on your phone. Voice is shared only when you join a room. You choose every sensor.",
-            color = Muted,
-            lineHeight = 23.sp,
-        )
-        Spacer(Modifier.height(24.dp))
-        OutlinedTextField(
-            name,
-            { name = it.take(40) },
-            label = { Text("Your name") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-        )
+        Title("SENSE", "A little more aware.", "Choose your username. Find your people.")
         Spacer(Modifier.height(16.dp))
-        Action("Make it yours", name.isNotBlank() && profile.id.isNotBlank()) { vm.onboard(name) }
+        AccountForm(vm, profile)
+        Spacer(Modifier.height(20.dp))
+        Text(
+            "Camera and mouth sensing stay on your phone. You choose permissions when you use each feature.",
+            color = Muted,
+        )
+        if (BuildConfig.DEBUG)
+            TextButton(onClick = { vm.navigate(Destination.LABS) }) { Text("Developer settings") }
+        Spacer(Modifier.height(28.dp))
     }
 }
 

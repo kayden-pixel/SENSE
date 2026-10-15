@@ -35,8 +35,6 @@ class SenseViewModel(app: Application) : AndroidViewModel(app) {
     val error = MutableStateFlow<String?>(null)
     val busy = MutableStateFlow(false)
     val profile = g.store.profile.stateIn(viewModelScope, SharingStarted.Eagerly, Profile("", ""))
-    val onboarding =
-        g.store.flag("onboarded").stateIn(viewModelScope, SharingStarted.Eagerly, false)
     val veilEnabled = g.store.flag("veil").stateIn(viewModelScope, SharingStarted.Eagerly, false)
     val protectPeople =
         g.store.flag("protect_people").stateIn(viewModelScope, SharingStarted.Eagerly, false)
@@ -48,6 +46,8 @@ class SenseViewModel(app: Application) : AndroidViewModel(app) {
             .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
     val localNotice = MutableStateFlow<String?>(null)
     val recoveryKey = MutableStateFlow<String?>(null)
+    val ready = MutableStateFlow(false)
+    val developerOffline = MutableStateFlow(false)
     private var polling: Job? = null
 
     private val initialized =
@@ -56,11 +56,13 @@ class SenseViewModel(app: Application) : AndroidViewModel(app) {
                 withContext(Dispatchers.IO) { g.store.vault.token() }
                 g.store.ensureProfile()
                 val url = g.store.text("backend").first()
-                if (url.isNotBlank()) g.backend.configure(url)
+                if (BuildConfig.DEBUG && url.isNotBlank()) g.backend.configure(url)
                 g.backend.restoreCache()
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
-                error.value = e.message
+                error.value = UserFailures.message(e, g.capabilities.state.value.online)
+            } finally {
+                ready.value = true
             }
         }
 
@@ -69,7 +71,8 @@ class SenseViewModel(app: Application) : AndroidViewModel(app) {
             try {
                 block()
             } catch (e: Exception) {
-                if (e !is CancellationException) error.value = e.message ?: "Action unavailable"
+                if (e is CancellationException) throw e
+                error.value = UserFailures.message(e, g.capabilities.state.value.online)
             }
         }
     }
@@ -83,16 +86,17 @@ class SenseViewModel(app: Application) : AndroidViewModel(app) {
             viewModelScope.launch {
                 initialized.await()
                 while (isActive) {
-                    runCatching {
-                            val c = g.capabilities.state.value
-                            g.backend.rangingAvailable =
-                                c.ranging &&
-                                    c.rangingPermission &&
-                                    (feature.value == Feature.RADAR ||
-                                        feature.value == Feature.WHISPER)
-                            g.backend.sync()
-                        }
-                        .onFailure { g.backend.offline() }
+                    try {
+                        val c = g.capabilities.state.value
+                        g.backend.rangingAvailable =
+                            c.ranging &&
+                                c.rangingPermission &&
+                                (feature.value == Feature.RADAR || feature.value == Feature.WHISPER)
+                        g.backend.sync()
+                    } catch (e: Exception) {
+                        if (e is CancellationException) throw e
+                        g.backend.offline()
+                    }
                     delay(2000)
                 }
             }
@@ -134,13 +138,6 @@ class SenseViewModel(app: Application) : AndroidViewModel(app) {
         g.moment.stop()
         g.camera.close()
         feature.value = null
-    }
-
-    fun onboard(name: String) {
-        action {
-            g.store.profile(profile.value.id, name)
-            g.store.preference("onboarded", true)
-        }
     }
 
     fun saveProfile(name: String) {
@@ -203,19 +200,20 @@ class SenseViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun connect(
-        url: String,
         username: String,
         key: String?,
         register: Boolean,
         legacy: Boolean = false,
+        displayName: String = profile.value.name,
     ) {
+        if (busy.value) return
         action {
             initialized.await()
             busy.value = true
             try {
-                g.backend.configure(url)
                 val origin = g.backend.origin
-                g.store.text("backend", origin)
+                if (!g.backend.configured) throw ServiceFailure(FailureKind.OFFLINE)
+                if (!g.capabilities.state.value.online) throw ServiceFailure(FailureKind.NETWORK)
                 val normalized =
                     if (legacy) username.trim()
                     else username.trim().lowercase(java.util.Locale.ROOT)
@@ -249,16 +247,40 @@ class SenseViewModel(app: Application) : AndroidViewModel(app) {
                             normalized,
                             key?.takeIf { it.isNotBlank() }
                                 ?: saved?.recoveryKey
-                                ?: error("Enter your private recovery key on a new phone"),
+                                ?: throw ServiceFailure(FailureKind.AUTHENTICATION),
                         )
                 if (register)
                     withContext(Dispatchers.IO) { g.store.vault.identity(origin, identity) }
-                g.backend.authenticate(
-                    identity.recoveryKey,
-                    register,
-                    profile.value.copy(id = identity.id),
-                    if (legacy) null else normalized,
-                )
+                val accountProfile = profile.value.copy(id = identity.id, name = displayName.trim())
+                try {
+                    g.backend.authenticate(
+                        identity.recoveryKey,
+                        register,
+                        accountProfile,
+                        if (legacy) null else normalized,
+                    )
+                } catch (failure: ServiceFailure) {
+                    // A lost registration response must not strand a device whose
+                    // securely saved credential already owns the username.
+                    if (!register || saved == null || failure.kind != FailureKind.USERNAME_TAKEN)
+                        throw failure
+                    try {
+                        g.backend.authenticate(
+                            identity.recoveryKey,
+                            false,
+                            accountProfile,
+                            normalized,
+                        )
+                    } catch (retry: Exception) {
+                        if (retry is CancellationException) throw retry
+                        if (retry is ServiceFailure && retry.kind == FailureKind.AUTHENTICATION)
+                            throw failure
+                        throw retry
+                    }
+                }
+                g.store.preference("onboarded", true)
+                developerOffline.value = false
+                error.value = null
                 if (register) recoveryKey.value = identity.recoveryKey
             } finally {
                 busy.value = false
@@ -266,9 +288,36 @@ class SenseViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    fun signOut() = action {
+        closeFeature()
+        try {
+            g.backend.signOut()
+        } finally {
+            developerOffline.value = false
+            recoveryKey.value = null
+            g.store.preference("onboarded", false)
+        }
+    }
+
+    fun changeDeveloperServer(url: String) = action {
+        check(BuildConfig.DEBUG)
+        initialized.await()
+        check(!g.backend.authenticated)
+        closeFeature()
+        g.backend.configure(url.trim())
+        g.store.text("backend", g.backend.origin)
+        g.backend.restoreCache()
+        localNotice.value = "Developer server updated"
+    }
+
+    fun openOfflineDeveloperPreview() {
+        check(BuildConfig.DEBUG)
+        developerOffline.value = true
+        destination.value = Destination.HOME
+    }
+
     fun showRecoveryKey() = action {
-        val origin =
-            g.store.text("backend").first().ifBlank { BuildConfig.BACKEND_URL }.trimEnd('/')
+        val origin = g.backend.origin
         recoveryKey.value =
             withContext(Dispatchers.IO) { g.store.vault.identity(origin)?.recoveryKey }
         if (recoveryKey.value == null) error("This legacy identity uses your original password")

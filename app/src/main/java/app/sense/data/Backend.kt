@@ -26,7 +26,10 @@ class Backend(private val store: LocalStore) {
         get() = base.startsWith("https://")
 
     val authenticated
-        get() = store.vault.tokenFor(base) != null
+        get() = signedIn.value
+
+    private val _signedIn = MutableStateFlow(false)
+    val signedIn = _signedIn.asStateFlow()
 
     val people = MutableStateFlow<List<Person>>(emptyList())
     val sessions = MutableStateFlow<List<JSONObject>>(emptyList())
@@ -38,6 +41,9 @@ class Backend(private val store: LocalStore) {
         get() = clock.latest()?.uncertaintyMs ?: Long.MAX_VALUE
 
     fun configure(url: String) {
+        check(BuildConfig.DEBUG || url.trimEnd('/') == BuildConfig.BACKEND_URL.trimEnd('/')) {
+            "Custom servers are available only in developer builds"
+        }
         val parsed = url.trimEnd('/').takeIf { it.isNotEmpty() }?.toHttpUrlOrNull()
         require(
             url.isEmpty() ||
@@ -54,6 +60,7 @@ class Backend(private val store: LocalStore) {
         if (base != next) {
             generation++
             base = next
+            _signedIn.value = false
             clock.reset()
             lastRangingReport = null
             people.value = emptyList()
@@ -67,7 +74,7 @@ class Backend(private val store: LocalStore) {
         val origin = base
         val token = store.vault.tokenFor(origin)
         return withContext(Dispatchers.IO) {
-            check(origin.startsWith("https://")) { "Connect your SENSE server in You" }
+            if (!origin.startsWith("https://")) throw ServiceFailure(FailureKind.OFFLINE)
             if (epoch != generation) throw CancellationException("Account changed")
             val builder = Request.Builder().url(origin + route).header("Accept", "application/json")
             token?.let { builder.header("Authorization", "Bearer $it") }
@@ -91,9 +98,29 @@ class Backend(private val store: LocalStore) {
                         require(bytes.size <= 4 * 1024 * 1024) { "Server response too large" }
                         bytes.toString(Charsets.UTF_8)
                     } ?: "{}"
-                val j = JSONObject(text)
-                if (!response.isSuccessful)
-                    throw IllegalStateException(j.optString("error", "Server unavailable"))
+                if (!response.isSuccessful) {
+                    if (
+                        response.code == 401 &&
+                            !route.startsWith("/auth/") &&
+                            epoch == generation &&
+                            store.vault.clearTokenIfMatches(origin, token)
+                    ) {
+                        generation++
+                        clock.reset()
+                        lastRangingReport = null
+                        _signedIn.value = false
+                        people.value = emptyList()
+                        sessions.value = emptyList()
+                        radarToken = null
+                    }
+                    throw ServiceFailure(UserFailures.http(response.code, route))
+                }
+                val j =
+                    try {
+                        JSONObject(text)
+                    } catch (_: JSONException) {
+                        throw ServiceFailure(FailureKind.OFFLINE)
+                    }
                 if (epoch != generation) throw CancellationException("Account changed")
                 j
             }
@@ -121,14 +148,9 @@ class Backend(private val store: LocalStore) {
             "Server changed during sign-in"
         }
         generation++
+        val accountGeneration = generation
         lastRangingReport = null
         clock.reset()
-        store.vault.token(j.getString("token"), base)
-        if (register && !profile.avatar.isNullOrBlank())
-            request(
-                "/profile",
-                JSONObject().put("name", profile.name).put("avatar", profile.avatar),
-            )
         store.profile(j.getString("id"), j.getString("name"))
         store.text("username", j.optString("username").takeUnless { it == "null" } ?: "")
         if (username != null)
@@ -143,7 +165,26 @@ class Backend(private val store: LocalStore) {
                 "avatar",
                 j.optString("avatar").takeIf { it.startsWith("data:image/") } ?: "",
             )
-        sync()
+        withContext(Dispatchers.IO) {
+            if (base != authOrigin || generation != accountGeneration)
+                throw CancellationException("Account changed")
+            store.vault.token(j.getString("token"), authOrigin)
+        }
+        if (base != authOrigin || generation != accountGeneration)
+            throw CancellationException("Account changed")
+        _signedIn.value = true
+        try {
+            if (register && !profile.avatar.isNullOrBlank())
+                request(
+                    "/profile",
+                    JSONObject().put("name", profile.name).put("avatar", profile.avatar),
+                )
+            sync()
+        } catch (error: Exception) {
+            if (error is CancellationException) throw error
+            if (error is ServiceFailure && error.kind == FailureKind.AUTHENTICATION) throw error
+            offline()
+        }
     }
 
     suspend fun sync() =
@@ -201,6 +242,7 @@ class Backend(private val store: LocalStore) {
     private var lastRangingReport: Boolean? = null
 
     suspend fun restoreCache() {
+        _signedIn.value = withContext(Dispatchers.IO) { store.vault.tokenFor(base) != null }
         people.value =
             store.records.get("friend").mapNotNull { r ->
                 runCatching {
@@ -271,12 +313,18 @@ class Backend(private val store: LocalStore) {
             generation++
             clock.reset()
             lastRangingReport = null
-            store.vault.token(null)
+            _signedIn.value = false
             people.value = emptyList()
             sessions.value = emptyList()
             radarToken = null
-            store.records.clear("friend")
             status.value = "Offline mode"
+            withContext(NonCancellable + Dispatchers.IO) {
+                try {
+                    store.vault.token(null)
+                } finally {
+                    store.records.clear("friend")
+                }
+            }
         }
     }
 

@@ -1,5 +1,6 @@
 *.iml
 .gradle/
+.kotlin/
 **/build/
 local.properties
 .idea/
@@ -8,6 +9,7 @@ local.properties
 !.env.example
 *.jks
 *.keystore
+*.p12
 *.pem
 server/data/
 node_modules/

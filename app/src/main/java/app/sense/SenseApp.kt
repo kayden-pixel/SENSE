@@ -28,7 +28,9 @@ import org.json.*
 
 @Composable
 internal fun SenseApp(vm: SenseViewModel, permission: (String) -> Unit) {
-    val onboarded by vm.onboarding.collectAsStateWithLifecycle()
+    val ready by vm.ready.collectAsStateWithLifecycle()
+    val signedIn by vm.g.backend.signedIn.collectAsStateWithLifecycle()
+    val developerOffline by vm.developerOffline.collectAsStateWithLifecycle()
     val profile by vm.profile.collectAsStateWithLifecycle()
     val destination by vm.destination.collectAsStateWithLifecycle()
     val feature by vm.feature.collectAsStateWithLifecycle()
@@ -47,6 +49,7 @@ internal fun SenseApp(vm: SenseViewModel, permission: (String) -> Unit) {
             (destination == Destination.PEOPLE && peopleProtected ||
                 destination == Destination.YOU && youProtected)
     val activity = androidx.activity.compose.LocalActivity.current
+    LaunchedEffect(ready, signedIn) { if (ready && !signedIn) vm.closeFeature() }
     DisposableEffect(protect) {
         if (protect) activity?.window?.addFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
         onDispose {
@@ -54,8 +57,22 @@ internal fun SenseApp(vm: SenseViewModel, permission: (String) -> Unit) {
         }
     }
     BackHandler(feature != null) { vm.closeFeature() }
-    if (!onboarded) {
-        Onboarding(vm, profile)
+    RecoveryKeyDialog(vm)
+    val entry = AccountRules.entry(ready, signedIn, BuildConfig.DEBUG, developerOffline)
+    if (entry == AccountRules.Entry.LOADING) {
+        Box(Modifier.fillMaxSize().background(Ink), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(color = Accent)
+        }
+        return
+    }
+    if (entry == AccountRules.Entry.SIGN_IN) {
+        if (BuildConfig.DEBUG && destination == Destination.LABS) {
+            BackHandler { vm.navigate(Destination.HOME) }
+            Column(Modifier.fillMaxSize().background(Ink)) {
+                TextButton(onClick = { vm.navigate(Destination.HOME) }) { Text("Back to sign in") }
+                LabsScreen(vm, cap)
+            }
+        } else Onboarding(vm, profile)
         return
     }
     Scaffold(

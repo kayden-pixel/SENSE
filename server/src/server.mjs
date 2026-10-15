@@ -20,6 +20,11 @@ import {
 import path from "node:path";
 import { pipeline } from "node:stream/promises";
 import { fileURLToPath } from "node:url";
+import {
+  signLiveKitToken as jwt,
+  verifyLiveKit,
+  validateProductionEnvironment,
+} from "./livekit.mjs";
 const derive = promisify(pbkdf2);
 const hash = (s) => createHash("sha256").update(s).digest("hex");
 const problem = (status, message) =>
@@ -185,15 +190,6 @@ export function createApp(config = {}) {
           .digest("hex")
           .slice(0, 16)
       : null;
-  const jwt = (claims, secret) => {
-    const enc = (x) => Buffer.from(JSON.stringify(x)).toString("base64url");
-    const input = enc({ alg: "HS256", typ: "JWT" }) + "." + enc(claims);
-    return (
-      input +
-      "." +
-      createHmac("sha256", secret).update(input).digest("base64url")
-    );
-  };
   const livekit = config.livekit ?? {
     url: process.env.LIVEKIT_URL,
     key: process.env.LIVEKIT_API_KEY,
@@ -202,6 +198,29 @@ export function createApp(config = {}) {
   const queueRevocation = (room, user) =>
     run("INSERT OR IGNORE INTO voice_revocations VALUES(?,?)", room, user);
   const shutdown = new AbortController();
+  let voiceCheck;
+  let voiceCheckedUntil = 0;
+  let voiceReady = false;
+  const isVoiceReady = () => {
+    if (Date.now() < voiceCheckedUntil) return Promise.resolve(voiceReady);
+    if (!voiceCheck)
+      voiceCheck = Promise.resolve()
+        .then(() =>
+          config.verifyLivekit
+            ? config.verifyLivekit(livekit)
+            : verifyLiveKit(livekit, shutdown.signal),
+        )
+        .catch(() => false)
+        .then((result) => {
+          voiceReady = result === true;
+          voiceCheckedUntil = Date.now() + 15000;
+          return voiceReady;
+        })
+        .finally(() => {
+          voiceCheck = undefined;
+        });
+    return voiceCheck;
+  };
   let closed = false;
   let revoking = false;
   const flushRevocations = async () => {
@@ -336,7 +355,17 @@ export function createApp(config = {}) {
           ? String(req.headers["x-forwarded-for"] ?? "").split(",")[0]
           : req.socket.remoteAddress) ?? "unknown";
       rate("ip:" + ip, 600);
-      if (method === "GET" && route[0] === "health") {
+      if (method === "GET" && route.length === 1 && route[0] === "ready") {
+        one("SELECT 1");
+        const voice = await isVoiceReady();
+        send(voice ? 200 : 503, {
+          ready: voice,
+          version: "0.1.0",
+          services: { api: true, voice },
+        });
+        return;
+      }
+      if (method === "GET" && route.length === 1 && route[0] === "health") {
         send(200, { ok: true, version: "0.1.0" });
         return;
       }
@@ -467,8 +496,7 @@ export function createApp(config = {}) {
       );
       if (!credential) throw problem(401, "Sign in required");
       const u = credential.user;
-      const readAuthorizedBody = async () => {
-        const body = await readBody(req);
+      const assertAuthorized = () => {
         if (
           !one(
             "SELECT 1 FROM tokens WHERE hash=? AND user=? AND expires>?",
@@ -479,6 +507,10 @@ export function createApp(config = {}) {
         )
           throw problem(401, "Session credentials revoked");
         if (route[0] === "sessions" && route[1]) member(route[1], u);
+      };
+      const readAuthorizedBody = async () => {
+        const body = await readBody(req);
+        assertAuthorized();
         return body;
       };
       rate("user:" + u, 480);
@@ -750,12 +782,17 @@ export function createApp(config = {}) {
             )
           )
             throw problem(403, "Join this voice session first");
+          if (!(await isVoiceReady()))
+            throw problem(503, "Whisper is temporarily unavailable");
+          assertAuthorized();
           if (
-            !livekit?.key ||
-            !livekit?.secret ||
-            !livekit?.url?.startsWith("wss://")
+            !one(
+              "SELECT 1 FROM members WHERE session=? AND user=? AND joined=1",
+              s.id,
+              u,
+            )
           )
-            throw problem(503, "Voice server not configured");
+            throw problem(403, "Join this voice session first");
           if (
             one(
               "SELECT 1 FROM voice_revocations WHERE room=? AND user=?",
@@ -1018,6 +1055,7 @@ export function createApp(config = {}) {
   return server;
 }
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  validateProductionEnvironment(process.env);
   if (!process.env.RADAR_SECRET || process.env.RADAR_SECRET.length < 32)
     throw Error("Set RADAR_SECRET to a random 32+ character value");
   const server = createApp();

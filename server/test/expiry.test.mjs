@@ -15,6 +15,7 @@ test("expired voice sessions queue media ejection and deny new grants", async (t
     databasePath,
     mediaPath: path.join(folder, "media"),
     removeParticipant: async (room, user) => removed.push({ room, user }),
+    verifyLivekit: async () => true,
     livekit: {
       url: "wss://voice.example.org",
       key: "test-only",

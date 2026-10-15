@@ -14,6 +14,7 @@ test("real authorization, friend state, room grants and synchronized capture", a
     databasePath: ":memory:",
     mediaPath: media,
     radarSecret: "a".repeat(32),
+    verifyLivekit: async () => true,
     livekit: {
       url: "wss://voice.example.org",
       key: "test-only",
