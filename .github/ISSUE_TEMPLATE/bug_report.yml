@@ -1,0 +1,25 @@
+name: Bug report
+description: Report a reproducible problem
+title: "[Bug] "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+      description: Include expected behavior and reproducible steps. No tokens, training samples or private recordings.
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device and Android version
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: SENSE version or commit
+  - type: textarea
+    id: capability
+    attributes:
+      label: Relevant capability state from Labs

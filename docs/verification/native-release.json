@@ -1,0 +1,512 @@
+{
+  "apk": "app/build/outputs/apk/release/app-release-unsigned.apk",
+  "apkSha256": "e60d31d862e11143a285319d36f9a25eaf335e36b717e9944e9bb676b12214e3",
+  "libraries": [
+    {
+      "path": "lib/arm64-v8a/libandroidx.graphics.path.so",
+      "abi": "arm64-v8a",
+      "sha256": "41e9a793c43a0f4fddb19e33f346bace464f30f888ba7b9eaf96294ea115bfb6",
+      "zipPayloadOffset": 5210112,
+      "loadSegments": [
+        {
+          "offset": 0,
+          "vaddr": 0,
+          "filesz": 7232,
+          "memsz": 7232,
+          "align": 16384,
+          "flags": 5
+        },
+        {
+          "offset": 7232,
+          "vaddr": 23616,
+          "filesz": 912,
+          "memsz": 912,
+          "align": 16384,
+          "flags": 6
+        },
+        {
+          "offset": 8144,
+          "vaddr": 40912,
+          "filesz": 0,
+          "memsz": 16,
+          "align": 16384,
+          "flags": 6
+        }
+      ],
+      "errors": []
+    },
+    {
+      "path": "lib/arm64-v8a/libdatastore_shared_counter.so",
+      "abi": "arm64-v8a",
+      "sha256": "d3e48717c9aa147e0ab21063ba0e8e0211cabf8bf40b222640829519edbf58e1",
+      "zipPayloadOffset": 5226496,
+      "loadSegments": [
+        {
+          "offset": 0,
+          "vaddr": 0,
+          "filesz": 4544,
+          "memsz": 4544,
+          "align": 16384,
+          "flags": 5
+        },
+        {
+          "offset": 4544,
+          "vaddr": 20928,
+          "filesz": 616,
+          "memsz": 616,
+          "align": 16384,
+          "flags": 6
+        },
+        {
+          "offset": 5160,
+          "vaddr": 37928,
+          "filesz": 0,
+          "memsz": 1,
+          "align": 16384,
+          "flags": 6
+        }
+      ],
+      "errors": []
+    },
+    {
+      "path": "lib/arm64-v8a/libface_detector_v2_jni.so",
+      "abi": "arm64-v8a",
+      "sha256": "d2d105239f5c723838a6bea81ee9cf828b8a56b4de4bc1f4a2556b320d758851",
+      "zipPayloadOffset": 5242880,
+      "loadSegments": [
+        {
+          "offset": 0,
+          "vaddr": 0,
+          "filesz": 8141264,
+          "memsz": 8141264,
+          "align": 16384,
+          "flags": 5
+        },
+        {
+          "offset": 8142848,
+          "vaddr": 8142848,
+          "filesz": 336944,
+          "memsz": 339968,
+          "align": 16384,
+          "flags": 6
+        },
+        {
+          "offset": 8479792,
+          "vaddr": 8496176,
+          "filesz": 38936,
+          "memsz": 324944,
+          "align": 16384,
+          "flags": 6
+        }
+      ],
+      "errors": []
+    },
+    {
+      "path": "lib/arm64-v8a/libimage_processing_util_jni.so",
+      "abi": "arm64-v8a",
+      "sha256": "3e0071afcdc7e321f839e196d266014182f18d0988e4455acc9857a085b2184e",
+      "zipPayloadOffset": 13778944,
+      "loadSegments": [
+        {
+          "offset": 0,
+          "vaddr": 0,
+          "filesz": 26048,
+          "memsz": 26048,
+          "align": 16384,
+          "flags": 5
+        },
+        {
+          "offset": 26048,
+          "vaddr": 42432,
+          "filesz": 936,
+          "memsz": 936,
+          "align": 16384,
+          "flags": 6
+        },
+        {
+          "offset": 26984,
+          "vaddr": 59752,
+          "filesz": 0,
+          "memsz": 4,
+          "align": 16384,
+          "flags": 6
+        }
+      ],
+      "errors": []
+    },
+    {
+      "path": "lib/arm64-v8a/libjnidispatch.so",
+      "abi": "arm64-v8a",
+      "sha256": "abc26e994517bcaa3309acdb0a27373864086c7569c89d3087b8626fada9ef06",
+      "zipPayloadOffset": 13811712,
+      "loadSegments": [
+        {
+          "offset": 0,
+          "vaddr": 0,
+          "filesz": 152376,
+          "memsz": 152376,
+          "align": 16384,
+          "flags": 5
+        },
+        {
+          "offset": 162712,
+          "vaddr": 179096,
+          "filesz": 1708,
+          "memsz": 3816,
+          "align": 16384,
+          "flags": 6
+        }
+      ],
+      "errors": []
+    },
+    {
+      "path": "lib/arm64-v8a/liblivekit_uniffi.so",
+      "abi": "arm64-v8a",
+      "sha256": "5a361b8d7ecf4ef4ca4a4788d671c72e2de1b54c3605e888951225b00cb02c93",
+      "zipPayloadOffset": 13991936,
+      "loadSegments": [
+        {
+          "offset": 0,
+          "vaddr": 0,
+          "filesz": 400656,
+          "memsz": 400656,
+          "align": 16384,
+          "flags": 4
+        },
+        {
+          "offset": 400656,
+          "vaddr": 417040,
+          "filesz": 1117024,
+          "memsz": 1117024,
+          "align": 16384,
+          "flags": 5
+        },
+        {
+          "offset": 1517680,
+          "vaddr": 1550448,
+          "filesz": 58608,
+          "memsz": 59280,
+          "align": 16384,
+          "flags": 6
+        },
+        {
+          "offset": 1576288,
+          "vaddr": 1625440,
+          "filesz": 2888,
+          "memsz": 5360,
+          "align": 16384,
+          "flags": 6
+        }
+      ],
+      "errors": []
+    },
+    {
+      "path": "lib/arm64-v8a/liblkjingle_peerconnection_so.so",
+      "abi": "arm64-v8a",
+      "sha256": "827922506ab840b639836ffc28ae80a33dd7c3c4a0ee33cf374989c31828e6fb",
+      "zipPayloadOffset": 15581184,
+      "loadSegments": [
+        {
+          "offset": 0,
+          "vaddr": 0,
+          "filesz": 11917232,
+          "memsz": 11917232,
+          "align": 16384,
+          "flags": 5
+        },
+        {
+          "offset": 11917232,
+          "vaddr": 11933616,
+          "filesz": 175216,
+          "memsz": 178256,
+          "align": 16384,
+          "flags": 6
+        },
+        {
+          "offset": 12092448,
+          "vaddr": 12125216,
+          "filesz": 3768,
+          "memsz": 681448,
+          "align": 16384,
+          "flags": 6
+        }
+      ],
+      "errors": []
+    },
+    {
+      "path": "lib/arm64-v8a/libsurface_util_jni.so",
+      "abi": "arm64-v8a",
+      "sha256": "ee3f0d56f81cc0a301db32dc4fd51274c3216733b4c40172768e38bc5049a265",
+      "zipPayloadOffset": 27688960,
+      "loadSegments": [
+        {
+          "offset": 0,
+          "vaddr": 0,
+          "filesz": 2448,
+          "memsz": 2448,
+          "align": 16384,
+          "flags": 5
+        },
+        {
+          "offset": 2448,
+          "vaddr": 18832,
+          "filesz": 576,
+          "memsz": 576,
+          "align": 16384,
+          "flags": 6
+        }
+      ],
+      "errors": []
+    },
+    {
+      "path": "lib/x86_64/libandroidx.graphics.path.so",
+      "abi": "x86_64",
+      "sha256": "4e56c996f13670e70082658de7880c4020eabf4f25e43387f88ed78a713fc9f0",
+      "zipPayloadOffset": 27705344,
+      "loadSegments": [
+        {
+          "offset": 0,
+          "vaddr": 0,
+          "filesz": 7872,
+          "memsz": 7872,
+          "align": 16384,
+          "flags": 5
+        },
+        {
+          "offset": 7872,
+          "vaddr": 24256,
+          "filesz": 936,
+          "memsz": 936,
+          "align": 16384,
+          "flags": 6
+        },
+        {
+          "offset": 8808,
+          "vaddr": 41576,
+          "filesz": 0,
+          "memsz": 16,
+          "align": 16384,
+          "flags": 6
+        }
+      ],
+      "errors": []
+    },
+    {
+      "path": "lib/x86_64/libdatastore_shared_counter.so",
+      "abi": "x86_64",
+      "sha256": "fb6c9208988c49ae94943bc3236fa763ba584722e044fa4ea9a12d2941027105",
+      "zipPayloadOffset": 27721728,
+      "loadSegments": [
+        {
+          "offset": 0,
+          "vaddr": 0,
+          "filesz": 3872,
+          "memsz": 3872,
+          "align": 16384,
+          "flags": 5
+        },
+        {
+          "offset": 3872,
+          "vaddr": 20256,
+          "filesz": 552,
+          "memsz": 552,
+          "align": 16384,
+          "flags": 6
+        }
+      ],
+      "errors": []
+    },
+    {
+      "path": "lib/x86_64/libface_detector_v2_jni.so",
+      "abi": "x86_64",
+      "sha256": "bd2a0761c113a5285aff5591cc9a516fce8b351175151ba2e0390b2bfe64d8fe",
+      "zipPayloadOffset": 27738112,
+      "loadSegments": [
+        {
+          "offset": 0,
+          "vaddr": 0,
+          "filesz": 9309488,
+          "memsz": 9309488,
+          "align": 16384,
+          "flags": 5
+        },
+        {
+          "offset": 9322496,
+          "vaddr": 9322496,
+          "filesz": 321488,
+          "memsz": 323584,
+          "align": 16384,
+          "flags": 6
+        },
+        {
+          "offset": 9644032,
+          "vaddr": 9660416,
+          "filesz": 39136,
+          "memsz": 221488,
+          "align": 16384,
+          "flags": 6
+        }
+      ],
+      "errors": []
+    },
+    {
+      "path": "lib/x86_64/libimage_processing_util_jni.so",
+      "abi": "x86_64",
+      "sha256": "676e3e280c10dcb9b71ef5bb727552610dc73c7ec85af54c7c898f82785c33d7",
+      "zipPayloadOffset": 37437440,
+      "loadSegments": [
+        {
+          "offset": 0,
+          "vaddr": 0,
+          "filesz": 45392,
+          "memsz": 45392,
+          "align": 16384,
+          "flags": 5
+        },
+        {
+          "offset": 45392,
+          "vaddr": 61776,
+          "filesz": 688,
+          "memsz": 688,
+          "align": 16384,
+          "flags": 6
+        },
+        {
+          "offset": 46080,
+          "vaddr": 78848,
+          "filesz": 0,
+          "memsz": 4,
+          "align": 16384,
+          "flags": 6
+        }
+      ],
+      "errors": []
+    },
+    {
+      "path": "lib/x86_64/libjnidispatch.so",
+      "abi": "x86_64",
+      "sha256": "3809247e9b804a05ed8377b87d545cf5b5e97f960f75e725bc8497b40260e417",
+      "zipPayloadOffset": 37486592,
+      "loadSegments": [
+        {
+          "offset": 0,
+          "vaddr": 0,
+          "filesz": 103484,
+          "memsz": 103484,
+          "align": 16384,
+          "flags": 5
+        },
+        {
+          "offset": 113408,
+          "vaddr": 129792,
+          "filesz": 1652,
+          "memsz": 3912,
+          "align": 16384,
+          "flags": 6
+        }
+      ],
+      "errors": []
+    },
+    {
+      "path": "lib/x86_64/liblivekit_uniffi.so",
+      "abi": "x86_64",
+      "sha256": "5c0556a5c5a73e2195ec180780dc16158729601c44710ef87d4ef92490b40303",
+      "zipPayloadOffset": 37617664,
+      "loadSegments": [
+        {
+          "offset": 0,
+          "vaddr": 0,
+          "filesz": 571132,
+          "memsz": 571132,
+          "align": 16384,
+          "flags": 4
+        },
+        {
+          "offset": 571136,
+          "vaddr": 587520,
+          "filesz": 1279696,
+          "memsz": 1279696,
+          "align": 16384,
+          "flags": 5
+        },
+        {
+          "offset": 1850832,
+          "vaddr": 1883600,
+          "filesz": 103496,
+          "memsz": 107056,
+          "align": 16384,
+          "flags": 6
+        },
+        {
+          "offset": 1954328,
+          "vaddr": 2003480,
+          "filesz": 2912,
+          "memsz": 5400,
+          "align": 16384,
+          "flags": 6
+        }
+      ],
+      "errors": []
+    },
+    {
+      "path": "lib/x86_64/liblkjingle_peerconnection_so.so",
+      "abi": "x86_64",
+      "sha256": "0bb88a673bebc63d16453e52839b86d5c25d28b917c93b96d142fb357e688d45",
+      "zipPayloadOffset": 39583744,
+      "loadSegments": [
+        {
+          "offset": 0,
+          "vaddr": 0,
+          "filesz": 15807040,
+          "memsz": 15807040,
+          "align": 16384,
+          "flags": 5
+        },
+        {
+          "offset": 15807040,
+          "vaddr": 15823424,
+          "filesz": 257464,
+          "memsz": 257472,
+          "align": 16384,
+          "flags": 6
+        },
+        {
+          "offset": 16064512,
+          "vaddr": 16097280,
+          "filesz": 3864,
+          "memsz": 701300,
+          "align": 16384,
+          "flags": 6
+        }
+      ],
+      "errors": []
+    },
+    {
+      "path": "lib/x86_64/libsurface_util_jni.so",
+      "abi": "x86_64",
+      "sha256": "cd425e10a365fb3695e53f1e46227d44d89f14854da4f1258ef079c80c752339",
+      "zipPayloadOffset": 55656448,
+      "loadSegments": [
+        {
+          "offset": 0,
+          "vaddr": 0,
+          "filesz": 2544,
+          "memsz": 2544,
+          "align": 16384,
+          "flags": 5
+        },
+        {
+          "offset": 2544,
+          "vaddr": 18928,
+          "filesz": 576,
+          "memsz": 576,
+          "align": 16384,
+          "flags": 6
+        }
+      ],
+      "errors": []
+    }
+  ],
+  "errors": [],
+  "passed": true
+}

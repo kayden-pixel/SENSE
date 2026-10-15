@@ -1,0 +1,15 @@
+name: Feature request
+description: Suggest a practical improvement
+title: "[Feature] "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What user problem should this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Proposed behavior and hardware requirements
+      description: Distinguish shippable behavior from experimental model work.
