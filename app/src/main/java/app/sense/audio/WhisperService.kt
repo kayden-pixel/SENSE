@@ -317,7 +317,9 @@ class WhisperService(
             r.connect(credentials.getString("url"), credentials.getString("token"))
             currentCoroutineContext().ensureActive()
             check(gen == generation) { "Voice connection cancelled" }
-            r.localParticipant.setMicrophoneEnabled(true)
+            check(r.localParticipant.setMicrophoneEnabled(true)) { "Microphone publication failed" }
+            currentCoroutineContext().ensureActive()
+            check(gen == generation) { "Voice connection cancelled" }
             state.value = state.value.copy(phase = VoicePhase.CONNECTED, muted = false)
         } catch (e: Exception) {
             if (gen == generation) {
@@ -343,8 +345,17 @@ class WhisperService(
 
     suspend fun mute() {
         val r = room ?: return
+        val gen = generation
         val muted = !state.value.muted
-        r.localParticipant.setMicrophoneEnabled(!muted)
+        try {
+            check(r.localParticipant.setMicrophoneEnabled(!muted)) { "Microphone change failed" }
+            currentCoroutineContext().ensureActive()
+        } catch (e: Exception) {
+            // A failed mute must not leave a live microphone behind a muted indicator.
+            if (gen == generation) disconnect()
+            throw e
+        }
+        if (gen != generation || room !== r) return
         state.value = state.value.copy(muted = muted)
     }
 

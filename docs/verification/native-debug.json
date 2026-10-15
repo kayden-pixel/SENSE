@@ -1,6 +1,6 @@
 {
   "apk": "app/build/outputs/apk/debug/app-debug.apk",
-  "apkSha256": "8dc1d0181cf3cb5bad2b7dab83215163d473cdd59c0b5f311a343548b88ba268",
+  "apkSha256": "b1ae396296008cb3ee1e204db2dcfd60f2fa15473674308ee392234e884f9e19",
   "libraries": [
     {
       "path": "lib/arm64-v8a/libandroidx.graphics.path.so",

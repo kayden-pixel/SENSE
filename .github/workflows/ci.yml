@@ -90,6 +90,7 @@ jobs:
           node tools/check_release.mjs config/production.properties
           chmod +x gradlew
           ./gradlew :app:assembleRelease
+          python tools/check_release_apk.py app/build/outputs/apk/release/app-release.apk --build-tools "$ANDROID_HOME/build-tools/35.0.0"
           python tools/check_native.py app/build/outputs/apk/release/app-release.apk --json native-release.json
       - name: Prepare public beta files
         run: |
@@ -101,7 +102,7 @@ jobs:
       - name: Publish verified prerelease
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: v0.1.0-beta.${{ github.run_number }}
+          RELEASE_TAG: v0.1.1-beta.${{ github.run_number }}
         run: |
           cat > release-notes.md <<'NOTES'
           SENSE beta, release-signed APK and Apache-2.0 source.

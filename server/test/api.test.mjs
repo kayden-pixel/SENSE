@@ -110,7 +110,11 @@ test("real authorization, friend state, room grants and synchronized capture", a
       assert.equal(claims.sub, "bob");
       assert.equal(claims.video.room, voice.id);
       assert.deepEqual(claims.video.canPublishSources, ["microphone"]);
-      assert.ok(claims.exp - claims.iat <= 120);
+      assert.ok(claims.exp - claims.iat <= 60);
+      assert.equal(claims.nbf, claims.iat);
+      assert.equal(claims.video.roomAdmin, undefined);
+      assert.equal(claims.video.roomCreate, undefined);
+      assert.equal(claims.video.canPublishData, false);
     });
     const moment = (
       await request("/sessions", a, { kind: "moment", invitees: ["bob"] })

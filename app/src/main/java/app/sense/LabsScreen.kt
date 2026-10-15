@@ -75,20 +75,22 @@ internal fun LabsScreen(vm: SenseViewModel, c: Capabilities) {
             Detail("Measured total latency", "Not measured")
             Detail("Noise suppression", if (hear.noiseReduction) "Active" else "Off or unavailable")
         }
-        Section(
-            "Developer Simulation Mode",
-            "Explicit synthetic Radar data. Never used outside this screen.",
-        ) {
-            Toggle("Simulate a participant", simulation) {
-                simulation = it
-                vm.g.radar.simulate(it)
+        if (BuildConfig.DEBUG) {
+            Section(
+                "Developer Simulation Mode",
+                "Explicit synthetic Radar data. Never used outside this screen.",
+            ) {
+                Toggle("Simulate a participant", simulation) {
+                    simulation = it
+                    vm.g.radar.simulate(it)
+                }
+                if (simulation) {
+                    Text("DEVELOPER SIMULATION", color = Accent)
+                    RadarGraphic(ranges.values.toList(), Modifier.fillMaxWidth().height(180.dp))
+                }
             }
-            if (simulation) {
-                Text("DEVELOPER SIMULATION", color = Accent)
-                RadarGraphic(ranges.values.toList(), Modifier.fillMaxWidth().height(180.dp))
-            }
+            DisposableEffect(Unit) { onDispose { if (simulation) vm.g.radar.stop() } }
         }
-        DisposableEffect(Unit) { onDispose { if (simulation) vm.g.radar.stop() } }
         Section(
             "Capability packs",
             "Use a trusted HTTPS catalog. Downloads are verified before installation and again before loading.",

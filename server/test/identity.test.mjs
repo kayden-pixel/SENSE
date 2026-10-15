@@ -158,3 +158,40 @@ test("username uniqueness survives simultaneous registrations", async () => {
     rmSync(folder, { recursive: true, force: true });
   }
 });
+
+test("legacy IDs cannot shadow a reserved username, including a concurrent registration", async () => {
+  const folder = mkdtempSync(path.join(tmpdir(), "sense-address-ownership-"));
+  const app = createApp({ databasePath: ":memory:", mediaPath: folder });
+  await new Promise((resolve) => app.listen(0, "127.0.0.1", resolve));
+  const base = "http://127.0.0.1:" + app.address().port;
+  const register = async (id, username) => {
+    const response = await fetch(base + "/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id,
+        username,
+        name: id,
+        password: "test-only-private-device-key",
+      }),
+    });
+    await response.text();
+    return response.status;
+  };
+  try {
+    assert.equal(await register("reserved-owner-id", "reserved-name"), 200);
+    assert.equal(await register("RESERVED-NAME"), 409);
+    assert.deepEqual(
+      (
+        await Promise.all([
+          register("new-owner-id", "raced-address"),
+          register("RACED-ADDRESS"),
+        ])
+      ).sort(),
+      [200, 409],
+    );
+  } finally {
+    await new Promise((resolve) => app.close(resolve));
+    rmSync(folder, { recursive: true, force: true });
+  }
+});

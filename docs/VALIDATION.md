@@ -5,7 +5,7 @@ Build and test results are recorded for this implementation pass after final ver
 ## Required device trial
 
 1. Install the APK on two 64-bit phones. Deny each permission once, re-enable it through settings and verify capability updates. Test no-camera/no-mic/unsupported-UWB cases.
-2. Configure an HTTPS backend and WSS LiveKit server. Test replay of a previously issued room token after block/remove on the actual LiveKit deployment; self-hosted instant token revocation is not guaranteed. Register, sign in on another install, invite/accept/remove/block/unblock. Confirm room grants fail for outsiders and removed members, including active-call ejection.
+2. Use the official release's configured HTTPS backend and WSS LiveKit service. Operators provision these services before the phone trial; app users do not configure them. Test replay of a previously issued/refreshed room token after block/remove on the actual LiveKit deployment; self-hosted instant token revocation is not guaranteed. Register, sign in on another install, invite/accept/remove/block/unblock. Confirm room grants fail for outsiders and removed members, including active-call ejection. Record each result in [the two-phone acceptance record](TWO_PHONE_VALIDATION.md).
 3. Open Radar on both phones. Compare BLE estimates against known distances; verify direction is absent for RSSI, stale data is labeled, blocked friends disappear, rotating identifiers update and scanning stops on background/exit. Test Android 16 ranging on supported hardware.
 4. Join Whisper with wired stereo headphones. Verify bidirectional voice, mute, reconnection, participant updates and disconnect. Test measured left/right movement with real UWB direction; test mono Bluetooth routes and PCM fallback. Confirm Hear and Whisper cannot capture simultaneously.
 5. Train three distinct Silent gestures with 3–6 examples. Measure false accepts/rejects in varied light. Test threshold/margin, confirmation, cooldown, deletion and Silent mute controls inside a room. Background during training and verify no camera/microphone leak.
@@ -18,14 +18,17 @@ Build and test results are recorded for this implementation pass after final ver
 ## Commands
 
 ~~~sh
-./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug :app:assembleRelease
+./gradlew clean :app:assembleDebug :app:testDebugUnitTest :app:lintDebug :app:compileReleaseKotlin
 node --test server/test/*.test.mjs
 python -m unittest discover -s tools -p "test_*.py"
 python tools/check_native.py app/build/outputs/apk/debug/app-debug.apk
-python tools/check_native.py app/build/outputs/apk/release/app-release-unsigned.apk
+# Only after the official service is live and private signing is provisioned:
+./gradlew :app:assembleRelease :app:bundleRelease
+python tools/check_release_apk.py app/build/outputs/apk/release/app-release.apk --build-tools "$ANDROID_HOME/build-tools/35.0.0"
+python tools/check_native.py app/build/outputs/apk/release/app-release.apk
 ~~~
 
-Release signing and public server deployment are operator steps. An unsigned release APK is a build check, not an installable signed release. The debug APK is signed with the local Android debug key for testing.
+Release signing and public server deployment are operator steps. Current production packaging requires the live readiness gate and private release key; it does not produce an unconfigured unsigned consumer release. The debug APK is signed with the local Android debug key for testing.
 
 ## Earlier 0.1.0 verification — 2026-10-15
 
@@ -46,3 +49,14 @@ Release signing and public server deployment are operator steps. An unsigned rel
 - Real runtime probe using the saved LiveKit configuration: local API /health returned 200; /ready returned 503 with api=true and voice=false. An actual LiveKit room join returned HTTP 401, invalid API key. No successful production media or Android-to-production path is claimed.
 - No official public production endpoint or authorized persistent host is available. Four encrypted release-signing secrets are provisioned in GitHub; deployment and valid LiveKit credentials remain unavailable. No Android device/emulator is connected.
 - Private RSA-3072 PKCS12 release signing is provisioned locally and as encrypted GitHub secrets. Release packaging correctly fails its live-readiness gate. A new production APK was not built or published. The retained native-release.json and unsigned 0.1.0 APK describe the earlier build, not a current production release.
+
+## Production hardening verification — 2026-10-15
+
+- `clean`, `assembleDebug`, 27 JVM tests, `lintDebug` and `compileReleaseKotlin`: passed. Final incremental verification after disabling release simulation also passed. Lint: zero errors, 22 dependency/style warnings.
+- Backend: 36 reported tests, zero failures. Added a disk-backed HTTP journey covering distinct accounts, friend/presence state, unrelated-user Radar denial, room grant scope, Moment metadata/bytes and restart-persistent block/ejection retries. Added concurrent ID/username address collision protection, future-schema rollback refusal and interruption of in-flight downloads after credential revocation. Media boundaries are injected in these tests; they do not prove actual voice or camera behavior.
+- Eight Python regressions pass: five ELF/layout validator cases and three release-artifact cases. The rebuilt developer APK has 16 native libraries, all passing actual ELF PT_LOAD and ZIP checks. Current per-library audit: `verification/native-debug.json`. A developer APK is correctly rejected by the consumer artifact checker.
+- Release publication now checks the actual APK's DEX string table for the exact official endpoint, scans available private credential values in all decompressed entries, rejects debug manifests/signatures and verifies the app ID, target SDK and APK signature. This is prepared automation; no current production APK exists to pass it.
+- `assembleRelease` was actually attempted with provisioned private signing and failed at `verifyProductionBackend` because the official endpoint is absent. The gate was not bypassed. No release APK/AAB or new consumer download was published.
+- Live runtime recheck: local process liveness 200; media readiness 503 (`api=true`, `voice=false`). Actual saved-project room join exited with `invalid API key`. Authorized Render inventory still contains no SENSE service; available tools cannot provision its persistent disk. No public HTTPS deployment is claimed.
+- Private-value scans across current source and all decompressed developer APK entries found zero matches for available prepared-owner, signing and saved media credentials. First-party TODO/FIXME scan found no unfinished implementation placeholders. Explicit simulation is now gated in both debug UI and the Radar service; release cannot enable it.
+- [Two-phone acceptance results](TWO_PHONE_VALIDATION.md): every real-device item is NOT RUN. There is no attached Android device/emulator. Sensor ownership, actual microphone publication, remote audio, reconnect quality, Cloud/refreshed-token replay, physical ranging and synchronized capture still require those tests.

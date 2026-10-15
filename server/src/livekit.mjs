@@ -70,6 +70,55 @@ export async function verifyLiveKit(settings, signal, request = fetch) {
   }
 }
 
+export async function removeLiveKitParticipant(
+  settings,
+  room,
+  identity,
+  signal,
+  request = fetch,
+) {
+  if (!validLiveKitSettings(settings)) throw Error("Media server unavailable");
+  const now = Math.floor(Date.now() / 1000);
+  const token = signLiveKitToken(
+    {
+      iss: settings.key,
+      sub: "sense-server",
+      iat: now,
+      exp: now + 30,
+      video: { roomAdmin: true, room },
+    },
+    settings.secret,
+  );
+  const url = new URL(settings.url);
+  // Cloud's default cutoff has a one-minute replay window. Self-hosted servers
+  // do not implement token revocation; do not claim that removal invalidates JWTs.
+  const cloud = url.hostname.endsWith(".livekit.cloud");
+  const response = await request(
+    settings.url.replace(/^wss:/, "https:").replace(/\/$/, "") +
+      "/twirp/livekit.RoomService/RemoveParticipant",
+    {
+      method: "POST",
+      redirect: "error",
+      headers: {
+        Authorization: "Bearer " + token,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        room,
+        identity,
+        ...(cloud ? { revoke_token_ts: now } : {}),
+      }),
+      signal: AbortSignal.any([
+        AbortSignal.timeout(5000),
+        ...(signal ? [signal] : []),
+      ]),
+    },
+  );
+  await response.body?.cancel();
+  if (!response.ok && response.status !== 404)
+    throw Error("Media removal failed");
+}
+
 export function validateProductionEnvironment(env) {
   if (env.NODE_ENV !== "production") return;
   if (

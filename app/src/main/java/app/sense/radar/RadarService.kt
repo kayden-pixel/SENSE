@@ -5,6 +5,7 @@ import android.bluetooth.*
 import android.bluetooth.le.*
 import android.content.Context
 import android.os.*
+import app.sense.BuildConfig
 import app.sense.core.*
 import app.sense.data.Backend
 import java.util.UUID
@@ -133,6 +134,7 @@ class RadarService(
     }
 
     fun simulate(enabled: Boolean) {
+        check(!enabled || BuildConfig.DEBUG) { "Simulation requires a developer build" }
         stop()
         simulation = enabled
         if (!enabled) return

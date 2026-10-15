@@ -20,9 +20,11 @@ import {
 import path from "node:path";
 import { pipeline } from "node:stream/promises";
 import { fileURLToPath } from "node:url";
+import packageInfo from "../package.json" with { type: "json" };
 import {
   signLiveKitToken as jwt,
   verifyLiveKit,
+  removeLiveKitParticipant,
   validateProductionEnvironment,
 } from "./livekit.mjs";
 const derive = promisify(pbkdf2);
@@ -48,6 +50,12 @@ export function createApp(config = {}) {
   const db = new DatabaseSync(dbPath);
   db.exec("PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL;");
   const version = db.prepare("PRAGMA user_version").get().user_version;
+  if (version > 6) {
+    db.close();
+    throw Error(
+      "Database schema is newer than this server; refuse unsafe rollback",
+    );
+  }
   if (version < 1)
     db.exec(
       "BEGIN; CREATE TABLE users(id TEXT PRIMARY KEY,name TEXT NOT NULL,password TEXT NOT NULL,salt TEXT NOT NULL,last_seen INTEGER NOT NULL);" +
@@ -80,6 +88,12 @@ export function createApp(config = {}) {
   const q = (sql, ...args) => db.prepare(sql).all(...args);
   const one = (sql, ...args) => db.prepare(sql).get(...args);
   const run = (sql, ...args) => db.prepare(sql).run(...args);
+  const identityOwners = (value) =>
+    q(
+      "SELECT id,username FROM users WHERE id=? COLLATE NOCASE OR username=? COLLATE NOCASE",
+      value,
+      value,
+    );
   const buckets = new Map();
   const activeUploads = new Map();
   let activeAuth = 0;
@@ -104,18 +118,16 @@ export function createApp(config = {}) {
       ) {
         throw Error("Invalid private owner configuration");
       }
-      const previous = one(
-        "SELECT id,username FROM users WHERE id=? OR username=? COLLATE NOCASE",
-        owner.id,
-        owner.username,
-      );
+      const previous = [
+        ...identityOwners(owner.id),
+        ...identityOwners(owner.username),
+      ];
       if (
-        previous &&
-        (previous.id !== owner.id || previous.username !== owner.username)
+        previous.some((p) => p.id !== owner.id || p.username !== owner.username)
       ) {
         throw Error("Owner identity conflicts with an existing user");
       }
-      if (!previous)
+      if (!previous.length)
         run(
           "INSERT INTO users(id,name,username,password,salt,last_seen,password_iterations) VALUES(?,?,?,?,?,0,?)",
           owner.id,
@@ -234,44 +246,13 @@ export function createApp(config = {}) {
           if (closed) return false;
           if (config.removeParticipant)
             await config.removeParticipant(task.room, task.user);
-          else {
-            if (
-              !livekit?.url?.startsWith("wss://") ||
-              !livekit?.key ||
-              !livekit?.secret
-            )
-              throw Error("Media server unavailable");
-            const now = Math.floor(Date.now() / 1000);
-            const token = jwt(
-              {
-                iss: livekit.key,
-                sub: "sense-server",
-                iat: now,
-                exp: now + 30,
-                video: { roomAdmin: true, room: task.room },
-              },
-              livekit.secret,
+          else
+            await removeLiveKitParticipant(
+              livekit,
+              task.room,
+              task.user,
+              shutdown.signal,
             );
-            const response = await fetch(
-              livekit.url.replace(/^wss:/, "https:") +
-                "/twirp/livekit.RoomService/RemoveParticipant",
-              {
-                method: "POST",
-                redirect: "error",
-                headers: {
-                  Authorization: "Bearer " + token,
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ room: task.room, identity: task.user }),
-                signal: AbortSignal.any([
-                  AbortSignal.timeout(5000),
-                  shutdown.signal,
-                ]),
-              },
-            );
-            if (!response.ok && response.status !== 404)
-              throw Error("Media removal failed");
-          }
           if (closed) return false;
           run(
             "DELETE FROM voice_revocations WHERE room=? AND user=?",
@@ -360,13 +341,13 @@ export function createApp(config = {}) {
         const voice = await isVoiceReady();
         send(voice ? 200 : 503, {
           ready: voice,
-          version: "0.1.0",
+          version: packageInfo.version,
           services: { api: true, voice },
         });
         return;
       }
       if (method === "GET" && route.length === 1 && route[0] === "health") {
-        send(200, { ok: true, version: "0.1.0" });
+        send(200, { ok: true, version: packageInfo.version });
         return;
       }
       if (route[0] === "auth" && method === "POST") {
@@ -394,32 +375,18 @@ export function createApp(config = {}) {
           if (route[1] === "register") {
             if (!str(b.name, 1, 40))
               throw problem(400, "Name must be 1–40 characters");
-            if (one("SELECT 1 FROM users WHERE id=?", b.id))
+            if (identityOwners(b.id).length)
               throw problem(409, "ID already registered");
-            if (
-              username &&
-              one(
-                "SELECT 1 FROM users WHERE username=? COLLATE NOCASE OR id=? COLLATE NOCASE",
-                username,
-                username,
-              )
-            )
+            if (username && identityOwners(username).length)
               throw problem(409, "Username unavailable");
             const salt = randomBytes(16).toString("hex");
             const key = (
               await derive(b.password, salt, passwordIterations, 32, "sha256")
             ).toString("hex");
             // Another registration may have completed while PBKDF2 was running.
-            if (one("SELECT 1 FROM users WHERE id=?", b.id))
+            if (identityOwners(b.id).length)
               throw problem(409, "ID already registered");
-            if (
-              username &&
-              one(
-                "SELECT 1 FROM users WHERE username=? COLLATE NOCASE OR id=? COLLATE NOCASE",
-                username,
-                username,
-              )
-            )
+            if (username && identityOwners(username).length)
               throw problem(409, "Username unavailable");
             run(
               "INSERT INTO users(id,name,password,salt,last_seen,password_iterations,username) VALUES(?,?,?,?,?,?,?)",
@@ -811,8 +778,8 @@ export function createApp(config = {}) {
                 sub: u,
                 name,
                 iat: now,
-                nbf: now - 5,
-                exp: Math.min(now + 120, Math.floor(s.expires / 1000)),
+                nbf: now,
+                exp: Math.min(now + 60, Math.floor(s.expires / 1000)),
                 video: {
                   roomJoin: true,
                   room: s.id,
@@ -971,6 +938,12 @@ export function createApp(config = {}) {
           });
           await pipeline(
             createReadStream(path.join(media, clip.id + ".mp4")),
+            async function* (source) {
+              for await (const chunk of source) {
+                assertAuthorized();
+                yield chunk;
+              }
+            },
             res,
           );
           return;

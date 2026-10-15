@@ -46,7 +46,7 @@ internal fun CameraSurface(vm: SenseViewModel, mode: CameraMode, modifier: Modif
                     awaitCancellation()
                 } catch (e: Exception) {
                     if (e !is CancellationException)
-                        vm.error.value = "Camera unavailable: " + e.message
+                        vm.error.value = "Camera unavailable. Check camera access and try again."
                 } finally {
                     vm.g.camera.close(view)
                 }

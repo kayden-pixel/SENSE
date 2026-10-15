@@ -1,5 +1,6 @@
 package app.sense.camera
 
+import app.sense.core.UserFailures
 import app.sense.data.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -93,10 +94,11 @@ class MomentService(
                         },
                     )
                 } catch (e: Exception) {
+                    if (e is CancellationException) throw e
                     state.value =
                         state.value.copy(
                             recording = false,
-                            error = e.message ?: "Camera capture unavailable",
+                            error = "Camera capture unavailable. Please try again.",
                         )
                 }
             }
@@ -114,7 +116,12 @@ class MomentService(
             backend.sync()
             state.value = state.value.copy(progress = null)
         } catch (e: Exception) {
-            state.value = state.value.copy(progress = null, error = e.message)
+            state.value =
+                state.value.copy(
+                    progress = null,
+                    error = if (e is CancellationException) null else UserFailures.message(e),
+                )
+            if (e is CancellationException) throw e
         }
     }
 

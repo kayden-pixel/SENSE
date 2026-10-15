@@ -6,14 +6,14 @@ A native, local-first Android sensing app. Kotlin, Compose and Material 3. Apach
 
 **The install-and-use production release is blocked: no official production service is deployed and the saved LiveKit project rejects its API key. Existing APK downloads are developer builds.**
 
-SENSE is an early beta implementation, not a hardware-validated release. No AI provider account, subscription, or user API key is required. Friends, voice and coordinated capture use your own HTTPS backend; voice media uses your own LiveKit deployment.
+SENSE is an early beta implementation, not a hardware-validated release. No AI provider account, subscription, or user API key is required. Shared features use an operator-managed HTTPS backend and LiveKit service. Production provisioning remains blocked; debug builds also support self-hosting. Normal users never configure infrastructure.
 
 ## Status
 
 | Status | Feature | What is actually implemented |
 |---|---|---|
 | PARTIAL | App foundation | Five-tab dark UI, authenticated first-run flow, restored secure sessions, contextual permissions, Room/DataStore and encrypted credentials/training. Production endpoint and live deployment validation remain blocked |
-| WORKING | People backend | Unique usernames with device-held recovery keys, compatible legacy accounts, requests, accept/remove/block, heartbeat presence, invitations and expiring sessions |
+| PARTIAL | Accounts and people | Unique usernames with device-held recovery keys, compatible legacy accounts, requests, accept/remove/block, heartbeat presence, invitations and expiring sessions. Disk-backed HTTP/restart tests pass; public deployment remains unavailable |
 | PARTIAL | Radar fallback | BLE primary-packet advertising/scanning with rotating friend identifiers; RSSI estimates, smoothing and stale state; no invented direction. Physical two-phone discovery/calibration remains unverified |
 | PARTIAL | Precise Radar | Android 16 Ranging with HTTPS OOB exchange, platform negotiation may select UWB; needs testing on supported phones; pre-16 standalone UWB is not integrated |
 | PARTIAL | Whisper | LiveKit room join, real microphone publication, remote audio, mute/disconnect, custom headphone stereo PCM renderer with SDK speaker fallback; needs a configured LiveKit server and two-device playback/routing validation |
@@ -24,7 +24,7 @@ SENSE is an early beta implementation, not a hardware-validated release. No AI p
 | PARTIAL | Moment | Invite/join/readiness, host countdown, monotonic server-clock estimate with freshness/latency checks, 4-second CameraX clips, immutable session and capture-time uncertainty metadata, explicit transfer with progress, local history/share/delete; synchronization is best-effort, not frame-accurate |
 | LABS | Hear separation | Processor and keyword hooks; no trained audiovisual separation or keyword model integrated |
 | LABS | Moment reconstruction | Reconstruction interface; no 4D or bullet-time generation |
-| LABS | Simulation | Explicit synthetic Radar mode confined to Labs, off by default and stopped on exit |
+| LABS | Simulation | Explicit synthetic Radar mode in debug Labs only, off by default and stopped on exit. Release UI and service reject simulation |
 | PLANNED | Follow-up | Standalone pre-16 UWB, verified model integrations, hardware-driven regression tests, background voice foreground service, lost-key recovery and account deletion |
 
 ## Build
@@ -77,4 +77,4 @@ Local Room schemas are exported. Version 1→2 adds an index without deleting re
 
 ## Verification and release
 
-See [validation](docs/VALIDATION.md), [security](SECURITY.md), [contributing](CONTRIBUTING.md) and [third-party notices](THIRD_PARTY_NOTICES.md). Compiling and unit tests cannot establish sensor accuracy, BLE distance calibration, voice quality, camera start precision or audio latency. The hardware checklist remains required before promoting this beta.
+See [validation](docs/VALIDATION.md), [two-phone results/checklist](docs/TWO_PHONE_VALIDATION.md), [security](SECURITY.md), [contributing](CONTRIBUTING.md) and [third-party notices](THIRD_PARTY_NOTICES.md). Compiling and unit tests cannot establish sensor accuracy, BLE distance calibration, voice quality, camera start precision or audio latency. The hardware checklist remains required before promoting this beta.

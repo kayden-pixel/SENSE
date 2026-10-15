@@ -8,7 +8,67 @@ import { createApp } from "../src/server.mjs";
 import {
   verifyLiveKit,
   validateProductionEnvironment,
+  removeLiveKitParticipant,
 } from "../src/livekit.mjs";
+
+test("Cloud ejection pins the token cutoff, scopes admin access and closes response bodies", async () => {
+  const settings = {
+    url: "wss://test-only.livekit.cloud",
+    key: "test-key",
+    secret: "a".repeat(32),
+  };
+  let cancelled = 0;
+  const request = async (url, options) => {
+    assert.equal(
+      url,
+      "https://test-only.livekit.cloud/twirp/livekit.RoomService/RemoveParticipant",
+    );
+    assert.equal(options.redirect, "error");
+    const body = JSON.parse(options.body);
+    assert.equal(body.room, "specific-room");
+    assert.equal(body.identity, "specific-user");
+    assert.ok(Math.abs(body.revoke_token_ts - Date.now() / 1000) < 2);
+    const claims = JSON.parse(
+      Buffer.from(options.headers.Authorization.split(".")[1], "base64url"),
+    );
+    assert.deepEqual(claims.video, { roomAdmin: true, room: "specific-room" });
+    assert.equal(claims.exp - claims.iat, 30);
+    return new Response(
+      new ReadableStream({
+        cancel() {
+          cancelled++;
+        },
+      }),
+    );
+  };
+  await removeLiveKitParticipant(
+    settings,
+    "specific-room",
+    "specific-user",
+    undefined,
+    request,
+  );
+  assert.equal(cancelled, 1);
+  await assert.rejects(
+    removeLiveKitParticipant(
+      settings,
+      "specific-room",
+      "specific-user",
+      undefined,
+      async () => new Response("unavailable", { status: 503 }),
+    ),
+  );
+  await removeLiveKitParticipant(
+    { ...settings, url: "wss://self-hosted.example.org" },
+    "room",
+    "user",
+    undefined,
+    async (_, options) => {
+      assert.equal(JSON.parse(options.body).revoke_token_ts, undefined);
+      return new Response("not present", { status: 404 });
+    },
+  );
+});
 
 test("media readiness proves authorization with a short-lived least-privilege grant", async () => {
   const settings = {

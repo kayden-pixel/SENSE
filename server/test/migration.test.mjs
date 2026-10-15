@@ -105,3 +105,31 @@ test("schema 1 upgrades preserve profiles and hashed session credentials", async
     rmSync(folder, { recursive: true, force: true });
   }
 });
+
+test("an older server refuses a future schema without changing its data", () => {
+  const folder = mkdtempSync(path.join(tmpdir(), "sense-future-schema-"));
+  const databasePath = path.join(folder, "future.sqlite");
+  try {
+    const db = new DatabaseSync(databasePath);
+    db.exec(
+      "CREATE TABLE future_data(value TEXT); INSERT INTO future_data VALUES('preserved'); PRAGMA user_version=999;",
+    );
+    db.close();
+    assert.throws(
+      () => createApp({ databasePath, mediaPath: path.join(folder, "media") }),
+      /unsafe rollback/,
+    );
+    const reopened = new DatabaseSync(databasePath);
+    assert.equal(
+      reopened.prepare("PRAGMA user_version").get().user_version,
+      999,
+    );
+    assert.equal(
+      reopened.prepare("SELECT value FROM future_data").get().value,
+      "preserved",
+    );
+    reopened.close();
+  } finally {
+    rmSync(folder, { recursive: true, force: true });
+  }
+});
