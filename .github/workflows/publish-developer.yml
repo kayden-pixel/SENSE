@@ -1,0 +1,69 @@
+name: Publish developer package
+on:
+  workflow_dispatch:
+    inputs:
+      verified_run_id:
+        description: Successful Verify run from this repository containing sense-debug-apk
+        required: true
+        type: string
+permissions:
+  contents: write
+  actions: read
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      VERIFIED_RUN_ID: ${{ inputs.verified_run_id }}
+    steps:
+      - name: Verify artifact provenance
+        id: source
+        run: |
+          [[ "$VERIFIED_RUN_ID" =~ ^[0-9]+$ ]] || exit 1
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$VERIFIED_RUN_ID" > "$RUNNER_TEMP/verified-run.json"
+          python - <<'PY'
+          import json, os, re
+          from pathlib import Path
+          run = json.loads((Path(os.environ['RUNNER_TEMP']) / 'verified-run.json').read_text())
+          assert run['status'] == 'completed' and run['conclusion'] == 'success'
+          assert run['head_repository']['full_name'] == os.environ['GITHUB_REPOSITORY']
+          assert run['event'] in ('push', 'workflow_dispatch')
+          assert run['path'] == '.github/workflows/ci.yml'
+          assert re.fullmatch('[0-9a-f]{40}', run['head_sha'])
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              output.write('sha=' + run['head_sha'] + '\n')
+          PY
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.source.outputs.sha }}
+          persist-credentials: false
+      - name: Download and audit the verified APK
+        run: |
+          mkdir public-package
+          gh run download "$VERIFIED_RUN_ID" --repo "$GITHUB_REPOSITORY" --name sense-debug-apk --dir public-package
+          test -f public-package/app-debug.apk
+          python tools/check_native.py public-package/app-debug.apk --json public-package/native-debug.json
+          mv public-package/app-debug.apk public-package/SENSE-developer.apk
+          git archive --format=zip --prefix=SENSE/ -o public-package/SENSE-source.zip HEAD
+          cd public-package
+          sha256sum SENSE-developer.apk SENSE-source.zip native-debug.json > SHA256SUMS.txt
+      - name: Publish explicitly labeled developer prerelease
+        env:
+          SOURCE_SHA: ${{ steps.source.outputs.sha }}
+          PACKAGE_TAG: developer-${{ github.run_number }}
+        run: |
+          cat > "$RUNNER_TEMP/package-notes.md" <<'NOTES'
+          **Developer beta — NOT production ready.**
+
+          Includes the complete installable APK, Android/backend source, deployment configuration, documentation, SHA-256 checksums and a per-library native ELF audit. Original source is Apache-2.0. Private signing keys, owner credentials and user data are excluded.
+
+          No official production backend is deployed, and the saved LiveKit credentials are rejected. Internet accounts, friends, shared Radar, Whisper and multi-device Moment remain blocked. Local sensing is available through explicit debug developer preview with permissions. Normal consumer onboarding must not require service configuration; this is not the consumer release.
+
+          The APK comes from the successful Verify run linked below. Android/backend tests and lint passed there; the packaged native libraries were audited again for actual 16 KB ELF LOAD compatibility. Real two-phone testing has not been performed.
+
+          This APK uses a CI development signing certificate, which may differ from previous installations. Preserve private recovery keys and local captures before changing installations; this package does not provide a production update/signing channel.
+          NOTES
+          printf '\nSource commit: %s\n\nVerified build: https://github.com/%s/actions/runs/%s\n' "$SOURCE_SHA" "$GITHUB_REPOSITORY" "$VERIFIED_RUN_ID" >> "$RUNNER_TEMP/package-notes.md"
+          gh release create "$PACKAGE_TAG" public-package/* --repo "$GITHUB_REPOSITORY" --target "$SOURCE_SHA" --draft --prerelease --latest=false --title "SENSE developer beta — NOT production ready" --notes-file "$RUNNER_TEMP/package-notes.md"
+          gh release edit "$PACKAGE_TAG" --repo "$GITHUB_REPOSITORY" --draft=false --prerelease --latest=false
