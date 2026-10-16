@@ -41,9 +41,12 @@ class InstallationTest {
         ui.onNodeWithText("Recovery key").performTextInput(identity.recoveryKey)
         ui.onNodeWithText("Sign in").performScrollTo().assertIsEnabled().performClick()
         ui.waitUntil(60000) {
-            vm.error.value != null || ui.onAllNodesWithText("Stay in tune.").fetchSemanticsNodes().isNotEmpty()
+            vm.error.value != null || app.graph.backend.authenticated
         }
         assertNull("Sign in error (online=${app.graph.capabilities.state.value.online}, busy=${vm.busy.value}, service=${app.graph.backend.status.value})", vm.error.value)
+        // Sign-in restores the selected You tab rather than navigating to Home.
+        ui.onNodeWithText("@" + username).assertExists()
+        ui.onNodeWithText("Home", useUnmergedTree = true).performClick()
         ui.onNodeWithText("Stay in tune.").assertExists()
     }
 }
