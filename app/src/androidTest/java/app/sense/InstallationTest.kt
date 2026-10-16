@@ -3,6 +3,7 @@ package app.sense
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.lifecycle.ViewModelProvider
 import app.sense.data.DeviceIdentity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
@@ -35,8 +36,14 @@ class InstallationTest {
         ui.onNodeWithText("@" + username).assertExists()
         ui.onNodeWithText("Sign out").performScrollTo().performClick()
         ui.waitUntil(30000) { ui.onAllNodesWithText("Sign in").fetchSemanticsNodes().isNotEmpty() }
+        val vm = ui.runOnIdle { ViewModelProvider(ui.activity)[SenseViewModel::class.java] }
+        ui.onNodeWithText("Your username").performTextReplacement(username)
         ui.onNodeWithText("Recovery key").performTextInput(identity.recoveryKey)
-        ui.onNodeWithText("Sign in", useUnmergedTree = true).performScrollTo().performClick()
-        ui.waitUntil(60000) { ui.onAllNodesWithText("Stay in tune.").fetchSemanticsNodes().isNotEmpty() }
+        ui.onNodeWithText("Sign in").performScrollTo().assertIsEnabled().performClick()
+        ui.waitUntil(60000) {
+            vm.error.value != null || ui.onAllNodesWithText("Stay in tune.").fetchSemanticsNodes().isNotEmpty()
+        }
+        assertNull("Sign in error (online=${app.graph.capabilities.state.value.online}, busy=${vm.busy.value}, service=${app.graph.backend.status.value})", vm.error.value)
+        ui.onNodeWithText("Stay in tune.").assertExists()
     }
 }
