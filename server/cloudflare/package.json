@@ -3,10 +3,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "wrangler deploy --dry-run --outdir .wrangler/test-build && node --test runtime.test.mjs",
+    "test": "wrangler deploy --dry-run --outdir .wrangler/test-build && node --test *.test.mjs",
     "deploy": "wrangler deploy"
   },
   "devDependencies": {
     "wrangler": "4.151.1"
+  },
+  "dependencies": {
+    "@noble/hashes": "2.4.0"
   }
 }

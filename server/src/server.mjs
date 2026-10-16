@@ -27,7 +27,7 @@ import {
   removeLiveKitParticipant,
   validateProductionEnvironment,
 } from "./livekit.mjs";
-const derive = promisify(pbkdf2);
+const nativeDerive = promisify(pbkdf2);
 const hash = (s) => createHash("sha256").update(s).digest("hex");
 const problem = (status, message) =>
   Object.assign(new Error(message), { status });
@@ -39,6 +39,7 @@ const usernameOf = (s) =>
     ? s.toLowerCase()
     : null;
 export function createApp(config = {}) {
+  const derive = config.derivePassword ?? nativeDerive;
   const dbPath =
     config.databasePath ?? process.env.DATABASE_PATH ?? "./data/sense.sqlite";
   if (!config.database && dbPath !== ":memory:")
@@ -1020,6 +1021,7 @@ export function createApp(config = {}) {
       );
     }
     await flushRevocations().catch(() => {});
+    if (closed) return;
     run("DELETE FROM tokens WHERE expires<?", Date.now());
     run("DELETE FROM oob WHERE created<?", Date.now() - 60000);
   };

@@ -14,5 +14,6 @@ The Apache-2.0 license in LICENSE applies to original SENSE source. Third-party 
 | UniFFI native runtime and LiveKit FFI | [UniFFI](https://github.com/mozilla/uniffi-rs) / [LiveKit Rust SDK](https://github.com/livekit/rust-sdks) — retain their runtime and transitive license notices |
 | JUnit | [JUnit](https://github.com/junit-team/junit4) — EPL-1.0 (test-only) |
 | Gradle wrapper | [Gradle](https://github.com/gradle/gradle) — Apache-2.0 |
+| Cloudflare Worker password hashing | [noble-hashes](https://github.com/paulmillr/noble-hashes) — MIT; server bundle only |
 
 No third-party separation, lip-reading or reconstruction weights are distributed as optional packs. Each pack catalog entry must include its own license and source. A checksum verifies bytes, not a license or publisher's trustworthiness.

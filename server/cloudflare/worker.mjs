@@ -4,6 +4,7 @@ import { createApp } from "../src/server.mjs";
 import { durableDatabase } from "./sqlite.mjs";
 import { durableMedia } from "./media.mjs";
 import { validLiveKitSettings } from "../src/livekit.mjs";
+import { derivePassword } from "./password.mjs";
 
 export class SenseApi extends DurableObject {
   constructor(ctx, env) {
@@ -14,6 +15,7 @@ export class SenseApi extends DurableObject {
     this.media = durableMedia(ctx.storage);
     this.server = createApp({
       database: durableDatabase(ctx.storage),
+      derivePassword,
       transaction: (operation) => ctx.storage.transactionSync(operation),
       mediaStore: this.media,
       radarSecret: env.RADAR_SECRET,

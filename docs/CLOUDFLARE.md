@@ -25,6 +25,11 @@ matching LiveKit project's WSS URL/key/secret. These are **server secrets**, nev
 Android settings or source files. An optional private `OWNER_ACCOUNT` is supported.
 No first visitor gains operator privileges. Missing secrets fail closed.
 
+The Worker uses `@noble/hashes` PBKDF2-HMAC-SHA256 to retain the existing 600,000
+round password format. Cloudflare's production native PBKDF2 limit is lower than
+the local simulator's, so native derivation must not be substituted. Cross-runtime
+tests verify both current and legacy hashes byte for byte.
+
 The stable Durable Object name is `sense-production-v1`. Do not change this name,
 the Worker name, or the binding's class during updates: they select the persistent
 database. Preserve the namespace when deleting/recreating deployments.
