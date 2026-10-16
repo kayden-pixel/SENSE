@@ -212,7 +212,7 @@ class SenseViewModel(app: Application) : AndroidViewModel(app) {
             busy.value = true
             try {
                 val origin = g.backend.origin
-                if (!g.backend.configured) throw ServiceFailure(FailureKind.OFFLINE)
+                if (!g.backend.configured) throw ServiceFailure(FailureKind.NOT_CONFIGURED)
                 if (!g.capabilities.state.value.online) throw ServiceFailure(FailureKind.NETWORK)
                 val normalized =
                     if (legacy) username.trim()

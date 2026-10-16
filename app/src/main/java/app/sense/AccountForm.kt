@@ -19,6 +19,7 @@ internal fun AccountForm(vm: SenseViewModel, profile: Profile) {
     val busy by vm.busy.collectAsStateWithLifecycle()
     val error by vm.error.collectAsStateWithLifecycle()
     val cap by vm.g.capabilities.state.collectAsStateWithLifecycle()
+    val configured = vm.g.backend.configured
     LaunchedEffect(savedUsername) {
         if (username.isBlank() && savedUsername.isNotBlank()) {
             username = savedUsername
@@ -71,12 +72,18 @@ internal fun AccountForm(vm: SenseViewModel, profile: Profile) {
             enabled = !busy,
             modifier = Modifier.fillMaxWidth(),
         )
-    if (!cap.online)
+    if (!configured)
+        Text(
+            UserFailures.message(ServiceFailure(FailureKind.NOT_CONFIGURED)),
+            color = MaterialTheme.colorScheme.error,
+        )
+    else if (!cap.online)
         Text("No connection. Connect to Wi-Fi or mobile data to continue.", color = Muted)
     error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
     Action(
         if (busy) "Connecting…" else if (register) "Create my username" else "Sign in",
         !busy &&
+            configured &&
             cap.online &&
             (if (legacy) Regex("[a-zA-Z0-9-]{1,64}").matches(username.trim())
             else AccountRules.username(username) != null),

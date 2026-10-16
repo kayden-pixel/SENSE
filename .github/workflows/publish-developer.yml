@@ -38,6 +38,11 @@ jobs:
         with:
           ref: ${{ steps.source.outputs.sha }}
           persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Refuse public downloads without a working service
+        run: node tools/check_release.mjs config/production.properties --endpoint-only
       - name: Download and audit the verified APK
         run: |
           mkdir public-package

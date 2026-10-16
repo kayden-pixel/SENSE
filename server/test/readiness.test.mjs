@@ -23,7 +23,7 @@ test("Cloud ejection pins the token cutoff, scopes admin access and closes respo
       url,
       "https://test-only.livekit.cloud/twirp/livekit.RoomService/RemoveParticipant",
     );
-    assert.equal(options.redirect, "error");
+    assert.equal(options.redirect, "manual");
     const body = JSON.parse(options.body);
     assert.equal(body.room, "specific-room");
     assert.equal(body.identity, "specific-user");
@@ -83,7 +83,7 @@ test("media readiness proves authorization with a short-lived least-privilege gr
       url,
       "https://voice.example.org/twirp/livekit.RoomService/ListRooms",
     );
-    assert.equal(options.redirect, "error");
+    assert.equal(options.redirect, "manual");
     const token = options.headers.Authorization.slice(7);
     const [header, payload, signature] = token.split(".");
     assert.equal(

@@ -1,0 +1,14 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "sense-api",
+  "main": "worker.mjs",
+  "compatibility_date": "2026-10-16",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "durable_objects": {
+    "bindings": [{ "name": "SENSE_API", "class_name": "SenseApi" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["SenseApi"] }],
+  "alias": { "node:sqlite": "./sqlite.mjs" },
+  "observability": { "enabled": false }
+}
