@@ -35,6 +35,7 @@ require(
 }
 
 android {
+    testBuildType = providers.gradleProperty("sense.testBuildType").orElse("debug").get()
     namespace = "app.sense"
     compileSdk = 36
     buildToolsVersion = "35.0.0"

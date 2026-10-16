@@ -139,6 +139,24 @@ jobs:
           ./gradlew :app:assembleRelease
           python tools/check_release_apk.py app/build/outputs/apk/release/app-release.apk --build-tools "$ANDROID_HOME/build-tools/35.0.0"
           python tools/check_native.py app/build/outputs/apk/release/app-release.apk --json native-release.json
+      - name: Enable emulator acceleration for the signed APK
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Install and verify the signed minified release
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          script: ./gradlew :app:connectedReleaseAndroidTest -Psense.testBuildType=release
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: signed-installation-reports
+          path: app/build/reports/androidTests
       - name: Prepare public beta files
         run: |
           mkdir -p public-release
