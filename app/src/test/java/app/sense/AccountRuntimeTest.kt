@@ -7,6 +7,14 @@ import org.junit.Test
 
 class AccountRuntimeTest {
     @Test
+    fun missingServiceConfigurationDoesNotTellUsersToRetryAnOutage() {
+        val message = UserFailures.message(ServiceFailure(FailureKind.NOT_CONFIGURED))
+        assertTrue(message.contains("no SENSE service configured"))
+        assertFalse(message.contains("temporarily"))
+        assertFalse(message.contains("shortly"))
+    }
+
+    @Test
     fun freshAndExpiredInstallationsRequireAuthentication() {
         assertEquals(AccountRules.Entry.LOADING, AccountRules.entry(false, false, false, false))
         assertEquals(AccountRules.Entry.SIGN_IN, AccountRules.entry(true, false, false, false))

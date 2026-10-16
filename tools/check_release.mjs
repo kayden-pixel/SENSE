@@ -91,13 +91,14 @@ export function verifySigning(env) {
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   try {
-    const url = productionUrl(
-      readFileSync(process.argv[2] ?? "config/production.properties", "utf8"),
-    );
+    const endpointOnly = process.argv.includes("--endpoint-only");
+    const config = process.argv.slice(2).find((arg) => !arg.startsWith("--"));
+    const url = productionUrl(readFileSync(config ?? "config/production.properties", "utf8"));
     await verifyProductionEndpoint(url);
-    verifySigning(process.env);
+    if (!endpointOnly) verifySigning(process.env);
     console.log(
-      "Production endpoint, voice readiness and release signing verified.",
+      endpointOnly ? "Production endpoint and voice readiness verified." :
+        "Production endpoint, voice readiness and release signing verified.",
     );
   } catch {
     console.error(

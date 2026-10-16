@@ -4,16 +4,16 @@
 
 A native, local-first Android sensing app. Kotlin, Compose and Material 3. Apache-2.0 for original source.
 
-**The install-and-use production release is blocked: no official production service is deployed and the saved LiveKit project rejects its API key. Existing APK downloads are developer builds.**
+**The official API is now deployed at https://sense-api.jarvis-mesh.workers.dev with persistent storage and verified LiveKit authorization. Use the connected 0.1.2 release; earlier developer APKs have no official service configured.**
 
-SENSE is an early beta implementation, not a hardware-validated release. No AI provider account, subscription, or user API key is required. Shared features use an operator-managed HTTPS backend and LiveKit service. Production provisioning remains blocked; debug builds also support self-hosting. Normal users never configure infrastructure.
+SENSE is an early beta implementation, not a hardware-validated release. No AI provider account, subscription, or user API key is required. Shared features use an operator-managed HTTPS backend and LiveKit service. The API uses Cloudflare's free SQLite-backed Durable Objects with bounded shared clip storage; debug builds also support self-hosting. Normal users never configure infrastructure.
 
 ## Status
 
 | Status | Feature | What is actually implemented |
 |---|---|---|
-| PARTIAL | App foundation | Five-tab dark UI, authenticated first-run flow, restored secure sessions, contextual permissions, Room/DataStore and encrypted credentials/training. Production endpoint and live deployment validation remain blocked |
-| PARTIAL | Accounts and people | Unique usernames with device-held recovery keys, compatible legacy accounts, requests, accept/remove/block, heartbeat presence, invitations and expiring sessions. Disk-backed HTTP/restart tests pass; public deployment remains unavailable |
+| PARTIAL | App foundation | Five-tab dark UI, authenticated first-run flow, restored secure sessions, contextual permissions, Room/DataStore and encrypted credentials/training. Official HTTPS endpoint and LiveKit authorization are live; real hardware validation remains |
+| PARTIAL | Accounts and people | Unique usernames with device-held recovery keys, compatible legacy accounts, requests, accept/remove/block, heartbeat presence, invitations and expiring sessions. Node and Cloudflare HTTP/restart tests pass; public service is available |
 | PARTIAL | Radar fallback | BLE primary-packet advertising/scanning with rotating friend identifiers; RSSI estimates, smoothing and stale state; no invented direction. Physical two-phone discovery/calibration remains unverified |
 | PARTIAL | Precise Radar | Android 16 Ranging with HTTPS OOB exchange, platform negotiation may select UWB; needs testing on supported phones; pre-16 standalone UWB is not integrated |
 | PARTIAL | Whisper | LiveKit room join, real microphone publication, remote audio, mute/disconnect, custom headphone stereo PCM renderer with SDK speaker fallback; needs a configured LiveKit server and two-device playback/routing validation |
@@ -45,7 +45,7 @@ On Windows use gradlew.bat. Set JAVA_HOME to your JDK. If a Windows JBR build re
 
 The release build reads only the public official endpoint from config/production.properties. Normal users never enter server URLs or LiveKit settings. Debug builds can override the endpoint with -Psense.backendUrl or SENSE_BACKEND_URL and in Labs → Developer server. Production ignores stored debug overrides and has no offline-preview bypass.
 
-Production packaging runs tools/check_release.mjs: it requires a public HTTPS endpoint whose /ready check proves API and LiveKit authorization, plus private release signing supplied through environment configuration. With the current missing production configuration, assembleRelease and bundleRelease intentionally fail. CI compiles release sources and tests developer builds, and cannot publish an unconfigured debug APK as a production release.
+Production packaging runs tools/check_release.mjs: it requires a public HTTPS endpoint whose /ready check proves API and LiveKit authorization, plus private release signing supplied through environment configuration. CI also tests a fresh installation in an Android emulator. Public APK publication is blocked if the official service is unconfigured or unavailable.
 
 ## Run the backend
 
@@ -59,7 +59,7 @@ cp .env.example .env
 node --env-file=.env src/server.mjs
 ~~~
 
-Place it behind an HTTPS reverse proxy. Bind to localhost unless a private container network is used. Store database/media on a durable disk and back it up; protect the disk and backups. Do not expose the plain HTTP listener publicly. See [server setup](docs/SERVER.md).
+Place a self-hosted Node server behind an HTTPS reverse proxy. Bind to localhost unless a private container network is used. Store database/media on a durable disk and back it up; protect the disk and backups. Do not expose the plain HTTP listener publicly. See [server setup](docs/SERVER.md) or the [free Cloudflare deployment](docs/CLOUDFLARE.md) used by the official service.
 
 On first launch, choose a username or sign in with a recovery key. Authentication and secure session persistence complete before the main UI opens. The phone generates a private 256-bit recovery key and stores it with Android Keystore; save this key to use your identity on another phone. A username alone never authorizes access. Friends choose their own usernames explicitly; the APK contains no owner login. To use a prepared identity, turn off Choose a new username and enter its username and private recovery key. Older SENSE ID/password accounts remain supported. Exchange usernames and send/accept requests in People. Both phones must open Radar to advertise and range. Radar requests Nearby devices and precise location permission because it derives relative distance from scans; Android location services must be enabled. SENSE does not request GPS coordinates. Rotating BLE hints are not authenticated proof of proximity. In Whisper, create a room, invite the friend, then both join. In Moment, create/invite/join, mark both cameras ready, and the host starts the shared countdown. Transfer remains an explicit user action.
 

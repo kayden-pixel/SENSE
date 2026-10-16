@@ -34,18 +34,18 @@ GET /health reports process liveness. GET /ready returns 200 only after a real a
 
 The official public URL belongs in config/production.properties. Release signing uses SENSE_KEYSTORE_PATH, SENSE_KEYSTORE_PASSWORD, SENSE_KEY_ALIAS and SENSE_KEY_PASSWORD; no signing or service secret is a BuildConfig field. The manual CI publish_release path additionally uses encrypted GitHub SENSE_KEYSTORE_BASE64 and signing secrets, packages a release-signed APK, and verifies native ELF layout. Normal users see only username/sign-in and contextual permissions. Developer server configuration exists only in debug Labs.
 
-Current deployment audit: Render MCP access is valid but cannot attach the required persistent disk; no alternate VPS connection is authorized; No deployment or valid LiveKit secrets are available; four encrypted release-signing secrets have been provisioned. The saved king LiveKit project returned HTTP 401 with invalid API key during an actual room join. No public production endpoint was provisioned and no production APK is claimed.
+Current deployment (2026-10-16): the official HTTPS API is https://sense-api.jarvis-mesh.workers.dev. It runs on Cloudflare's free SQLite-backed Durable Objects with persistent accounts and bounded clip storage. New LiveKit credentials are encrypted Worker secrets; real `/ready` authorization succeeds. The previous unconfigured developer APKs must be replaced with the connected release. See [the Cloudflare adapter and deployment instructions](CLOUDFLARE.md).
 
-## Exact remaining operator inputs
+## Operator configuration
 
-Only infrastructure access and valid media credentials are missing; these are not per-user setup steps:
+Infrastructure is managed by the operator; app users only create or recover their own identity:
 
 | Required input | Current state |
 |---|---|
-| Authorized host capable of deploying one Node 22.16+ process with HTTPS and a persistent writable disk | Missing. The connected Render MCP cannot attach a disk. An authorized full Render deployment/API connection or an authorized VPS would resolve this. No paid resource has been provisioned |
-| LIVEKIT_URL | Needs a valid reachable WSS project/server URL. Use the canonical `*.livekit.cloud` URL for Cloud's explicit token-cutoff behavior |
-| LIVEKIT_API_KEY and LIVEKIT_API_SECRET | Missing valid pair for that same server; saved pair is rejected. These stay server-side |
+| Persistent host | Cloudflare Workers Free with SQLite-backed Durable Objects; no Render billing or R2 subscription |
+| LIVEKIT_URL | The reachable WSS URL for the operator's LiveKit Cloud project |
+| LIVEKIT_API_KEY and LIVEKIT_API_SECRET | Matching new key/secret stored only in encrypted Worker settings |
 
-The host supplies the public API URL, which then goes into `config/production.properties` before packaging. `render.yaml` already defines `NODE_ENV=production`, `HOST=0.0.0.0`, `DATABASE_PATH=/var/data/sense/sense.sqlite`, `MEDIA_PATH=/var/data/sense/media`, a generated stable `RADAR_SECRET` and a single instance. A stable Radar secret and optional prepared owner record also already exist privately in the operator workspace; no shared APK credential is needed. Release signing is already provisioned locally and in encrypted GitHub secrets. Deployment must verify persistent-disk restart/backup behavior and trusted proxy handling; `TRUST_PROXY=true` is safe only if the isolated gateway overwrites untrusted forwarding headers with a verified client address.
+The public API URL is in `config/production.properties`. The stable Radar secret is an encrypted Worker setting. Release signing uses the existing encrypted GitHub secrets. The optional Node/Render deployment remains available for self-hosting; its local database/media paths require a persistent disk. `TRUST_PROXY=true` is safe there only if the isolated gateway overwrites untrusted forwarding headers with a verified client address. The Cloudflare adapter replaces forwarding headers using Cloudflare's trusted client address.
 
 Release publication verifies `/ready`, signing, the compiled APK's official URL, package/SDK, non-debuggable manifest, signature and exclusion of available private values, followed by the ELF/ZIP native audit. The two-phone acceptance record remains mandatory even after a successful publication check.

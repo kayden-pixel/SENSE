@@ -51,7 +51,7 @@ export async function verifyLiveKit(settings, signal, request = fetch) {
         "/twirp/livekit.RoomService/ListRooms",
       {
         method: "POST",
-        redirect: "error",
+        redirect: "manual",
         headers: {
           "Content-Type": "application/json",
           Authorization: "Bearer " + token,
@@ -98,7 +98,7 @@ export async function removeLiveKitParticipant(
       "/twirp/livekit.RoomService/RemoveParticipant",
     {
       method: "POST",
-      redirect: "error",
+      redirect: "manual",
       headers: {
         Authorization: "Bearer " + token,
         "Content-Type": "application/json",

@@ -35,6 +35,7 @@ require(
 }
 
 android {
+    testBuildType = providers.gradleProperty("sense.testBuildType").orElse("debug").get()
     namespace = "app.sense"
     compileSdk = 36
     buildToolsVersion = "35.0.0"
@@ -43,8 +44,9 @@ android {
         applicationId = "app.sense"
         minSdk = 28
         targetSdk = 36
-        versionCode = 2
-        versionName = "0.1.1-beta"
+        versionCode = 3
+        versionName = "0.1.2-beta"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "BACKEND_URL", "\"" + backendUrl + "\"")
     }
     buildFeatures {
@@ -118,4 +120,8 @@ dependencies {
     implementation("io.livekit:livekit-android:2.29.0")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     testImplementation("junit:junit:4.13.2")
+    androidTestImplementation(platform("androidx.compose:compose-bom:2025.04.01"))
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+    androidTestImplementation("androidx.test:runner:1.6.2")
+    debugImplementation("androidx.compose.ui:ui-test-manifest")
 }

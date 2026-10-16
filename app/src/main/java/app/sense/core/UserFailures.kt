@@ -4,6 +4,7 @@ import java.io.IOException
 import java.net.SocketTimeoutException
 
 enum class FailureKind {
+    NOT_CONFIGURED,
     NETWORK,
     OFFLINE,
     USERNAME_TAKEN,
@@ -41,6 +42,8 @@ object UserFailures {
                 else -> FailureKind.UNKNOWN
             }
         return when (kind) {
+            FailureKind.NOT_CONFIGURED ->
+                "This build has no SENSE service configured. Install the connected release when it is available."
             FailureKind.NETWORK -> "No connection. Check Wi-Fi or mobile data and try again."
             FailureKind.OFFLINE -> "SENSE is temporarily unavailable. Please try again shortly."
             FailureKind.USERNAME_TAKEN ->

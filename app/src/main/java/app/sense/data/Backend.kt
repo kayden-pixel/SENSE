@@ -74,7 +74,7 @@ class Backend(private val store: LocalStore) {
         val origin = base
         val token = store.vault.tokenFor(origin)
         return withContext(Dispatchers.IO) {
-            if (!origin.startsWith("https://")) throw ServiceFailure(FailureKind.OFFLINE)
+            if (!origin.startsWith("https://")) throw ServiceFailure(FailureKind.NOT_CONFIGURED)
             if (epoch != generation) throw CancellationException("Account changed")
             val builder = Request.Builder().url(origin + route).header("Accept", "application/json")
             token?.let { builder.header("Authorization", "Bearer $it") }

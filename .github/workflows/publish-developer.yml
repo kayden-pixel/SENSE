@@ -38,6 +38,11 @@ jobs:
         with:
           ref: ${{ steps.source.outputs.sha }}
           persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Refuse public downloads without a working service
+        run: node tools/check_release.mjs config/production.properties --endpoint-only
       - name: Download and audit the verified APK
         run: |
           mkdir public-package
@@ -58,7 +63,7 @@ jobs:
 
           Includes the complete installable APK, Android/backend source, deployment configuration, documentation, SHA-256 checksums and a per-library native ELF audit. Original source is Apache-2.0. Private signing keys, owner credentials and user data are excluded.
 
-          No official production backend is deployed, and the saved LiveKit credentials are rejected. Internet accounts, friends, shared Radar, Whisper and multi-device Moment remain blocked. Local sensing is available through explicit debug developer preview with permissions. Normal consumer onboarding must not require service configuration; this is not the consumer release.
+          The official service passed live API and LiveKit readiness checks before publication. This is still a debug-signed testing artifact with developer controls; use the release-signed connected beta for normal installation. Physical sensor and two-phone behavior still require hardware validation.
 
           The APK comes from the successful Verify run linked below. Android/backend tests and lint passed there; the packaged native libraries were audited again for actual 16 KB ELF LOAD compatibility. Real two-phone testing has not been performed.
 

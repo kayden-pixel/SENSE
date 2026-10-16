@@ -27,7 +27,7 @@ import {
   removeLiveKitParticipant,
   validateProductionEnvironment,
 } from "./livekit.mjs";
-const derive = promisify(pbkdf2);
+const nativeDerive = promisify(pbkdf2);
 const hash = (s) => createHash("sha256").update(s).digest("hex");
 const problem = (status, message) =>
   Object.assign(new Error(message), { status });
@@ -39,15 +39,27 @@ const usernameOf = (s) =>
     ? s.toLowerCase()
     : null;
 export function createApp(config = {}) {
+  const derive = config.derivePassword ?? nativeDerive;
   const dbPath =
     config.databasePath ?? process.env.DATABASE_PATH ?? "./data/sense.sqlite";
-  if (dbPath !== ":memory:")
+  if (!config.database && dbPath !== ":memory:")
     mkdirSync(path.dirname(path.resolve(dbPath)), { recursive: true });
   const media = path.resolve(
     config.mediaPath ?? process.env.MEDIA_PATH ?? "./data/media",
   );
-  mkdirSync(media, { recursive: true });
-  const db = new DatabaseSync(dbPath);
+  if (!config.mediaStore) mkdirSync(media, { recursive: true });
+  const db = config.database ?? new DatabaseSync(dbPath);
+  const transaction = config.transaction ?? ((operation) => {
+    db.exec("BEGIN");
+    try {
+      const result = operation();
+      db.exec("COMMIT");
+      return result;
+    } catch (error) {
+      db.exec("ROLLBACK");
+      throw error;
+    }
+  });
   db.exec("PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL;");
   const version = db.prepare("PRAGMA user_version").get().user_version;
   if (version > 6) {
@@ -332,7 +344,7 @@ export function createApp(config = {}) {
         .filter(Boolean);
       const method = req.method;
       const ip =
-        (process.env.TRUST_PROXY === "true"
+        config.clientAddress?.(req) ?? (process.env.TRUST_PROXY === "true"
           ? String(req.headers["x-forwarded-for"] ?? "").split(",")[0]
           : req.socket.remoteAddress) ?? "unknown";
       rate("ip:" + ip, 600);
@@ -614,8 +626,7 @@ export function createApp(config = {}) {
             b.id,
             Date.now(),
           );
-          db.exec("BEGIN");
-          try {
+          transaction(() => {
             // A user cannot delete the other person's block, including via remove/block.
             run(
               "DELETE FROM relationships WHERE ((sender=? AND receiver=?) OR (sender=? AND receiver=?)) AND (state!='BLOCKED' OR sender=?)",
@@ -648,11 +659,7 @@ export function createApp(config = {}) {
               b.id,
               u,
             );
-            db.exec("COMMIT");
-          } catch (e) {
-            db.exec("ROLLBACK");
-            throw e;
-          }
+          });
           if (!(await flushRevocations()))
             throw problem(
               503,
@@ -877,7 +884,8 @@ export function createApp(config = {}) {
             if (bytes > size) req.destroy();
           });
           try {
-            await pipeline(req, createWriteStream(file, { flags: "wx" }));
+            if (config.mediaStore) await config.mediaStore.write(clip, req, size);
+            else await pipeline(req, createWriteStream(file, { flags: "wx" }));
             if (bytes !== size || digest.digest("hex") !== sha)
               throw problem(400, "Clip integrity failure");
             member(s.id, u);
@@ -915,7 +923,8 @@ export function createApp(config = {}) {
             );
           } catch (e) {
             try {
-              unlinkSync(file);
+              if (config.mediaStore) config.mediaStore.remove(clip);
+              else unlinkSync(file);
             } catch {}
             throw e;
           } finally {
@@ -937,7 +946,7 @@ export function createApp(config = {}) {
             "X-SHA256": clip.sha,
           });
           await pipeline(
-            createReadStream(path.join(media, clip.id + ".mp4")),
+            config.mediaStore?.read(clip.id) ?? createReadStream(path.join(media, clip.id + ".mp4")),
             async function* (source) {
               for await (const chunk of source) {
                 assertAuthorized();
@@ -999,7 +1008,7 @@ export function createApp(config = {}) {
       else res.destroy();
     }
   });
-  const cleanup = setInterval(() => {
+  const clean = async () => {
     for (const row of q(
       "SELECT s.id,m.user FROM sessions s JOIN members m ON m.session=s.id WHERE s.kind='voice' AND s.expires<=? AND m.joined=1",
       Date.now(),
@@ -1011,11 +1020,14 @@ export function createApp(config = {}) {
         row.user,
       );
     }
-    void flushRevocations().catch(() => {});
+    await flushRevocations().catch(() => {});
+    if (closed) return;
     run("DELETE FROM tokens WHERE expires<?", Date.now());
     run("DELETE FROM oob WHERE created<?", Date.now() - 60000);
-  }, 60000);
-  cleanup.unref();
+  };
+  server.senseCleanup = clean;
+  const cleanup = config.externalCleanup ? null : setInterval(() => { void clean(); }, 60000);
+  cleanup?.unref();
   server.requestTimeout = 60000;
   server.headersTimeout = 15000;
   server.timeout = 60000;
@@ -1027,7 +1039,7 @@ export function createApp(config = {}) {
   });
   return server;
 }
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (import.meta.url && process.argv[1] === fileURLToPath(import.meta.url)) {
   validateProductionEnvironment(process.env);
   if (!process.env.RADAR_SECRET || process.env.RADAR_SECRET.length < 32)
     throw Error("Set RADAR_SECRET to a random 32+ character value");
