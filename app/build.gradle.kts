@@ -47,6 +47,7 @@ android {
         versionCode = 3
         versionName = "0.1.2-beta"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testProguardFiles("test-proguard-rules.pro")
         buildConfigField("String", "BACKEND_URL", "\"" + backendUrl + "\"")
     }
     buildFeatures {
