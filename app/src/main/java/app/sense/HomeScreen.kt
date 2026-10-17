@@ -13,6 +13,8 @@ import androidx.compose.ui.*
 import androidx.compose.ui.draw.*
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.platform.*
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.input.*
 import androidx.compose.ui.unit.*
 import androidx.lifecycle.*
@@ -25,9 +27,11 @@ import kotlinx.coroutines.*
 import org.json.*
 
 @Composable
+@OptIn(ExperimentalComposeUiApi::class)
 internal fun Onboarding(vm: SenseViewModel, profile: Profile) {
     Column(
-        Modifier.fillMaxSize().background(Ink).verticalScroll(rememberScrollState()).padding(28.dp),
+        Modifier.fillMaxSize().background(Ink).verticalScroll(rememberScrollState())
+            .semantics { testTagsAsResourceId = true }.padding(28.dp),
         verticalArrangement = Arrangement.Center,
     ) {
         Spacer(Modifier.height(32.dp))

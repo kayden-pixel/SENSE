@@ -1,0 +1,4 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <queries><package android:name="app.sense" /></queries>
+    <application android:label="SENSE release verification" android:allowBackup="false" />
+</manifest>

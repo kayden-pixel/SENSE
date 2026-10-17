@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -54,7 +55,7 @@ internal fun AccountForm(vm: SenseViewModel, profile: Profile) {
         },
         singleLine = true,
         enabled = !busy,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().testTag("sense_username"),
     )
     if (!register)
         OutlinedTextField(
@@ -70,7 +71,7 @@ internal fun AccountForm(vm: SenseViewModel, profile: Profile) {
             visualTransformation = PasswordVisualTransformation(),
             singleLine = true,
             enabled = !busy,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().testTag("sense_recovery_key"),
         )
     if (!configured)
         Text(
