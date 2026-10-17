@@ -10,6 +10,9 @@ collect_diagnostics() {
   timeout 15 "${device[@]}" logcat -d -v threadtime \
     AndroidRuntime:E TestRunner:I AndroidJUnitRunner:I System.err:W '*:S' \
     > "$reports/android-test.log" 2>&1 || true
+  timeout 15 "${device[@]}" pull \
+    /sdcard/Android/data/app.sense.releasecheck/files/release-screen.png \
+    "$reports/release-screen.png" > /dev/null 2>&1 || true
 }
 trap collect_diagnostics EXIT
 

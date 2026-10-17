@@ -7,7 +7,9 @@ import android.content.Intent;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.uiautomator.*;
+import java.io.File;
 import java.util.regex.Pattern;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -15,6 +17,16 @@ import org.junit.runner.RunWith;
 @RunWith(AndroidJUnit4.class)
 public class ReleaseInstallationTest {
     private final UiDevice device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
+    private boolean safeToCapture;
+
+    @After
+    public void capturePublicScreen() {
+        // Never capture the private recovery-key dialog, even if signup fails.
+        if (safeToCapture) {
+            Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
+            device.takeScreenshot(new File(context.getExternalFilesDir(null), "release-screen.png"));
+        }
+    }
 
     private void launch() {
         Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
@@ -63,17 +75,22 @@ public class ReleaseInstallationTest {
         String recoveryKey = keyNode.getText(); // Memory only: never logged or saved.
         click("Done");
         text("Stay in tune.", 30000);
+        safeToCapture = true;
 
         device.executeShellCommand("am force-stop app.sense");
         launch();
         text("Stay in tune.", 30000);
         click("You");
+        text("Make space for you.", 15000);
+        reveal(new UiSelector().text("@" + username));
         text("@" + username, 15000);
         click("Sign out");
         enter("sense_username", username);
         enter("sense_recovery_key", recoveryKey);
         click("Sign in");
-        text("@" + username, 60000);
+        text("Make space for you.", 60000);
+        reveal(new UiSelector().text("@" + username));
+        text("@" + username, 15000);
         click("Home");
         text("Stay in tune.", 15000);
     }
