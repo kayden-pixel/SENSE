@@ -35,7 +35,6 @@ require(
 }
 
 android {
-    testBuildType = providers.gradleProperty("sense.testBuildType").orElse("debug").get()
     namespace = "app.sense"
     compileSdk = 36
     buildToolsVersion = "35.0.0"
@@ -47,7 +46,6 @@ android {
         versionCode = 3
         versionName = "0.1.2-beta"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        testProguardFiles("test-proguard-rules.pro")
         buildConfigField("String", "BACKEND_URL", "\"" + backendUrl + "\"")
     }
     buildFeatures {
@@ -124,6 +122,5 @@ dependencies {
     androidTestImplementation(platform("androidx.compose:compose-bom:2025.04.01"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     androidTestImplementation("androidx.test:runner:1.6.2")
-    androidTestImplementation("com.google.errorprone:error_prone_annotations:2.36.0")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 }

@@ -18,3 +18,4 @@ dependencyResolutionManagement {
 rootProject.name = "SENSE"
 
 include(":app")
+include(":release-check")

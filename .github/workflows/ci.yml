@@ -136,7 +136,7 @@ jobs:
         run: |
           node tools/check_release.mjs config/production.properties
           chmod +x gradlew
-          ./gradlew :app:assembleRelease :app:assembleReleaseAndroidTest -Psense.testBuildType=release
+          ./gradlew :app:assembleRelease :release-check:assembleDebug :release-check:assembleDebugAndroidTest
           python tools/check_release_apk.py app/build/outputs/apk/release/app-release.apk --build-tools "$ANDROID_HOME/build-tools/35.0.0"
           python tools/check_native.py app/build/outputs/apk/release/app-release.apk --json native-release.json
       - name: Enable emulator acceleration for the signed APK
